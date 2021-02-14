@@ -92,30 +92,43 @@ class RouteServerInteraction(object):
                 checked_asn (int): AS Number
             
             Return:
-                dict: Instance of self.route_servers containing
-                state & ASN information
+                dict: Nested dict containing state & ASN information
         """
         # load latest data
         data = self.get_responses()
+        response = {}
 
         # Get state per route server in each location for the specific ASN
         for location, location_data in data.items():
             for route_server, route_server_data in location_data.items():
+                # Check if route server is currently down/in an errored state
+                if route_server_data.get('error') is not None:
+                    continue
                 for asn, asn_data in route_server_data['data']['protocols'].items():
                     if asn_data.get('neighbor_as') == checked_asn:
-                        route_server_data['asn'] = checked_asn
-                        route_server_data['name'] = asn_data.get('description')
-                        route_server_data['state'] = asn_data.get('state')
-        
-        return data
+                        if location not in response:
+                            response[location] = {
+                                route_server: {
+                                    'asn': checked_asn,
+                                    'name': asn_data.get('description'),
+                                    'state': asn_data.get('state')
+                                }
+                            }
+                        
+                        if route_server not in response[location]:
+                            response[location][route_server] = {
+                                'asn': checked_asn,
+                                'name': asn_data.get('description'),
+                                'state': asn_data.get('state')
+                            }
+        return response
     
     def parse(self, data: dict) -> PrettyTable:
         """
             Parse into a table format
 
             Arguments:
-                data (dict): Instance of self.route_servers containing
-                state & ASN information
+                data (dict): Nested dict containing state & ASN information
             
             Return:
                 PrettyTable: Formatted table containing
@@ -146,7 +159,11 @@ class RouteServerInteraction(object):
         """
         for loc, loc_data in self.route_servers.items():
             for rs, rsd in loc_data.items():
-                rsd['data'] = requests.get(rsd.get('url')).json()
+                try:
+                    rsd['data'] = requests.get(rsd.get('url')).json()
+                except requests.exceptions.ConnectionError:
+                    rsd['data'] = 'Route Server Unavailable'
+                    rsd['error'] = True
         return self.route_servers
     
     def _int_convert(self, item: str) -> int:
