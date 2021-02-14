@@ -1,104 +1,165 @@
-import requests
+#!/usr/bin/env python3
 import json
 import os
+
+import requests
+from prettytable import PrettyTable
 from dotenv import load_dotenv
+
 load_dotenv()
-SYD_RS1 = os.getenv('SYD_RS1')
-SYD_RS2 = os.getenv('SYD_RS2')
-MEL_RS1 = os.getenv('MEL_RS1')
-MEL_RS2 = os.getenv('MEL_RS2')
-ADL_RS1 = os.getenv('ADL_RS1')
-ADL_RS2 = os.getenv('ADL_RS2')
-BNE_RS1 = os.getenv('BNE_RS1')
-BNE_RS2 = os.getenv('BNE_RS2')
-PER_RS1 = os.getenv('PER_RS1')
-PER_RS2 = os.getenv('PER_RS2')
 
 
+class RouteServerInteraction(object):
 
-def bgp_s_peerstatus(asn):
-    response_rs1_syd = requests.get(SYD_RS1).json()
-    response_rs2_syd = requests.get(SYD_RS2).json()
-    response_rs1_mel = requests.get(MEL_RS1).json()
-    response_rs2_mel = requests.get(MEL_RS2).json()
-    response_rs1_adl = requests.get(ADL_RS1).json()
-    response_rs2_adl = requests.get(ADL_RS2).json()
-    response_rs1_bne = requests.get(BNE_RS1).json()
-    response_rs2_bne = requests.get(BNE_RS2).json()
-    response_rs1_per = requests.get(PER_RS1).json()
-    response_rs2_per = requests.get(PER_RS2).json()
-    results_rs1_syd = "SYD - rs1 - no peer found"
-    results_rs2_syd = "SYD - rs2 - no peer found"
-    results_rs1_mel = "MEL - rs1 - no peer found"
-    results_rs2_mel = "MEL - rs2 - no peer found"
-    results_rs1_adl = "ADL - rs1 - no peer found"
-    results_rs2_adl = "ADL - rs2 - no peer found"
-    results_rs1_bne = "BNE - rs1 - no peer found"
-    results_rs2_bne = "BNE - rs2 - no peer found"
-    results_rs1_per = "PER - rs1 - no peer found"
-    results_rs2_per = "PER - rs2 - no peer found"
+    def __init__(self):
+        self.route_servers = {
+            'SYD': {
+                'rs1': {
+                    'url': os.getenv('SYD_RS1')
+                },
+                'rs2': {
+                    'url': os.getenv('SYD_RS2')
+                }
+            },
+            'MEL': {
+                'rs1': {
+                    'url': os.getenv('MEL_RS1')
+                },
+                'rs2': {
+                    'url': os.getenv('MEL_RS2')
+                }
+            },
+            'ADL': {
+                'rs1': {
+                    'url': os.getenv('ADL_RS1')
+                },
+                'rs2': {
+                    'url': os.getenv('ADL_RS2')
+                }
+            },
+            'BNE': {
+                'rs1': {
+                    'url': os.getenv('BNE_RS1')
+                },
+                'rs2': {
+                    'url': os.getenv('BNE_RS2')
+                }
+            },
+            'PER': {
+                'rs1': {
+                    'url': os.getenv('PER_RS1')
+                },
+                'rs2': {
+                    'url': os.getenv('PER_RS2')
+                }
+            }
+        }
 
-    for k,v in response_rs1_syd['protocols'].items():
-        if asn in k:
-            neighbor_as = str(v["neighbor_as"])
-            if asn == neighbor_as:
-                results_rs1_syd = "SYD: rs1 - "+asn+": "+v["state"]
+        # Load data on init
+        self.get_responses()
+    
+    def on_message(self, asn: int) -> PrettyTable:
+        """
+            Function called from Discord Bot message
 
-    for k,v in response_rs2_syd['protocols'].items():
-        if asn in k:
-            neighbor_as = str(v["neighbor_as"])
-            if asn == neighbor_as:
-                results_rs2_syd = "SYD: rs2 - "+asn+": "+v["state"]
+            Arguments:
+                asn (int): AS Number
+            
+            Return:
+                PrettyTable: Formatted table containing
+                location, route server, ASN & BGP state
+        """
+        if isinstance(asn, str):
+            asn = self._int_convert(asn)
+            if not asn:
+                return 'Please enter a valid ASN!'
 
-    for k,v in response_rs1_mel['protocols'].items():
-        if asn in k:
-            neighbor_as = str(v["neighbor_as"])
-            if asn == neighbor_as:
-                results_rs1_mel = "MEL: rs1 - "+asn+": "+v["state"]
+        data = self.check_asn(asn)
+        return self.parse(data)
+        
+    
+    def get_responses(self) -> None:
+        """
+            Load latest data from Inner Function
+        """
+        return self._load_bird_data()
+    
+    def check_asn(self, checked_asn: int) -> dict:
+        """
+            Remove ASN role from User, if present
 
-    for k,v in response_rs2_mel['protocols'].items():
-        if asn in k:
-            neighbor_as = str(v["neighbor_as"])
-            if asn == neighbor_as:
-                results_rs2_mel = "MEL: rs2 - "+asn+": "+v["state"]
+            Arguments:
+                checked_asn (int): AS Number
+            
+            Return:
+                dict: Instance of self.route_servers containing
+                state & ASN information
+        """
+        # load latest data
+        data = self.get_responses()
 
-    for k,v in response_rs1_adl['protocols'].items():
-        if asn in k:
-            neighbor_as = str(v["neighbor_as"])
-            if asn == neighbor_as:
-                results_rs1_adl = "ADL: rs1 - "+asn+": "+v["state"]
+        # Get state per route server in each location for the specific ASN
+        for location, location_data in data.items():
+            for route_server, route_server_data in location_data.items():
+                for asn, asn_data in route_server_data['data']['protocols'].items():
+                    if asn_data.get('neighbor_as') == checked_asn:
+                        route_server_data['asn'] = checked_asn
+                        route_server_data['name'] = asn_data.get('description')
+                        route_server_data['state'] = asn_data.get('state')
+        
+        return data
+    
+    def parse(self, data: dict) -> PrettyTable:
+        """
+            Parse into a table format
 
-    for k,v in response_rs2_adl['protocols'].items():
-        if asn in k:
-            neighbor_as = str(v["neighbor_as"])
-            if asn == neighbor_as:
-                results_rs2_adl = "ADL: rs2 - "+asn+": "+v["state"]
+            Arguments:
+                data (dict): Instance of self.route_servers containing
+                state & ASN information
+            
+            Return:
+                PrettyTable: Formatted table containing
+                location, route server, ASN & BGP state
+        """
+        table = PrettyTable()
+        table.field_names = ['Location', 'Route Server', 'Description', 'State']
+        for location, location_data in data.items():
+            for route_server, route_server_data in location_data.items():
+                table.add_row(
+                    [
+                        location, 
+                        route_server, 
+                        route_server_data['name'],
+                        route_server_data['state']
+                    ]
+                ) 
+        return table
+    
+    def _load_bird_data(self) -> dict:
+        """
+            Inner function to obtain data from IXPM, adds
+            data into self.route_servers
+            
+            Return:
+                dict: Latest version of the
+                route server data
+        """
+        for loc, loc_data in self.route_servers.items():
+            for rs, rsd in loc_data.items():
+                rsd['data'] = requests.get(rsd.get('url')).json()
+        return self.route_servers
+    
+    def _int_convert(self, item: str) -> int:
+        """
+            Attempt to convert str to int
 
-    for k,v in response_rs1_bne['protocols'].items():
-        if asn in k:
-            neighbor_as = str(v["neighbor_as"])
-            if asn == neighbor_as:
-                results_rs1_bne = "BNE: rs1 - "+asn+": "+v["state"]
-
-    for k,v in response_rs2_bne['protocols'].items():
-        if asn in k:
-            neighbor_as = str(v["neighbor_as"])
-            if asn == neighbor_as:
-                results_rs2_bne = "BNE: rs2 - "+asn+": "+v["state"]
-
-    for k,v in response_rs1_per['protocols'].items():
-        if asn in k:
-            neighbor_as = str(v["neighbor_as"])
-            if asn == neighbor_as:
-                results_rs1_per = "PER: rs1 - "+asn+": "+v["state"]
-
-    for k,v in response_rs2_per['protocols'].items():
-        if asn in k:
-            neighbor_as = str(v["neighbor_as"])
-            if asn == neighbor_as:
-                results_rs2_per = "PER: rs2 - "+asn+": "+v["state"]
-
-
-    return "\n"+results_rs1_syd+"\n"+results_rs2_syd+"\n"+results_rs1_mel+"\n"+results_rs2_mel+"\n"+results_rs1_adl+"\n"+results_rs2_adl+"\n"+results_rs1_bne+"\n"+results_rs2_bne+"\n"+results_rs1_per+"\n"+results_rs2_per
-
-
+            Arguments:
+                item (str): String to convert
+            
+            Return:
+                int/bool: Int if success, False if failure
+        """
+        try:
+            return int(item)
+        except ValueError:
+            return False
