@@ -135,7 +135,7 @@ class RouteServerInteraction(object):
                 location, route server, ASN & BGP state
         """
         table = PrettyTable()
-        table.field_names = ['Location', 'Route Server', 'Description', 'State']
+        table.field_names = ['City', 'RS', 'Description', 'State']
         for location, location_data in data.items():
             for route_server, route_server_data in location_data.items():
                 table.add_row(
@@ -145,7 +145,7 @@ class RouteServerInteraction(object):
                         route_server_data['name'],
                         route_server_data['state']
                     ]
-                ) 
+                )
         return table
     
     def _load_bird_data(self) -> dict:
