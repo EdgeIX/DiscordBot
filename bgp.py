@@ -133,20 +133,20 @@ class RouteServerInteraction(object):
             Return:
                 PrettyTable: Formatted table containing
                 location, route server, ASN & BGP state
+                str: Header containing ASN & readable name
         """
         table = PrettyTable()
-        table.field_names = ['Location', 'Route Server', 'Description', 'State']
+        table.field_names = ['City', 'Route Server', 'BGP State']
         for location, location_data in data.items():
             for route_server, route_server_data in location_data.items():
                 table.add_row(
                     [
                         location, 
                         route_server, 
-                        route_server_data['name'],
                         route_server_data['state']
                     ]
-                ) 
-        return table
+                )
+        return table, route_server_data['name']
     
     def _load_bird_data(self) -> dict:
         """
