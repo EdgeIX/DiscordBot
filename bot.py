@@ -107,10 +107,11 @@ async def peer_status(ctx, *, message):
     """
     match = ASN_REGEX.match(message.strip())
     if match:
-        response = RouteServers.on_message(message)
+        response, header = RouteServers.on_message(message)
         embed = await format_message(
             f'Peer Status for AS{message.strip()}',
-            f'```{response}```'
+            f'```{response}```',
+            header
         )
         await ctx.send(embed=embed)
 
@@ -143,7 +144,7 @@ async def on_member_join(member):
     await channel.send(embed=embed)
 
 
-async def format_message(title, value) -> discord.embeds.Embed:
+async def format_message(title: str, value: str, header: str = 'Response') -> discord.embeds.Embed:
     """
         Format message with Edge IX Embeds
 
@@ -158,7 +159,7 @@ async def format_message(title, value) -> discord.embeds.Embed:
         color = discord.Color.orange()
     )
     embed.set_author(name='EdgeIX Bot', url='https://edgeix.net', icon_url='https://i.imgur.com/63RePV2.png')
-    embed.add_field(name='Response', value=value, inline=True)
+    embed.add_field(name=header, value=value, inline=True)
     return embed
 
 bot.run(token)
