@@ -54,12 +54,12 @@ async def add_asn(ctx, *, message):
         user = ctx.message.author
         if get(ctx.guild.roles, name=asn):
             await user.add_roles(discord.utils.get(ctx.guild.roles, name=asn))
-            embed = await format_message('Role Addition', f'Successfully added {asn} to {user.name}')
+            embed = await format_message('Role Addition', f'Successfully added {asn} to {user.display_name}')
             await ctx.send(embed=embed)
         else:
             role = await ctx.guild.create_role(name=asn)
             await user.add_roles(role)
-            embed = await format_message('Role Addition', f'Successfully created and added {asn} to {user.name}')
+            embed = await format_message('Role Addition', f'Successfully created and added {asn} to {user.display_name}')
             await ctx.send(embed=embed)
     else:
         embed = format_message('Role Addition', f'Please enter a valid ASN. You provided: {message}')
@@ -87,7 +87,7 @@ async def remove_asn(ctx, *, message):
             # TODO, check if user actually has the role
             user = ctx.message.author
             await user.remove_roles(discord.utils.get(ctx.guild.roles, name=asn))
-            embed = await format_message('Role Removal', f'Successfully removed {asn} from {user.name}')
+            embed = await format_message('Role Removal', f'Successfully removed {asn} from {user.display_name}')
             await ctx.send(embed=embed)
     else:
         embed = await format_message('Role Removal', f'Please enter a valid ASN. You provided: {message}')
