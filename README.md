@@ -1,8 +1,6 @@
 # EdgeIX Discord Bot
 ![EdgeIX](https://www.edgeix.net/img/logo.png)
 
-Discord Bot that uses IXP Managers API to allow users to display peer status and various other functions in Discord.
-
 ## About EdgeIX Bot
 EdgeIX Bot is a Discord Bot that uses IXP Managers API to allow users to display peer status and various other functions from within the EdgeIX Discord.
 
