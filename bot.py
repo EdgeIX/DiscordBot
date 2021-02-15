@@ -110,10 +110,17 @@ async def peer_status(ctx, *, message):
         response, header = RouteServers.on_message(message)
         embed = await format_message(
             f'Peer Status for AS{message.strip()}',
-            f'```{response}```',
+            response,
             header
         )
-        await ctx.send(embed=embed)
+    else:
+        embed = await format_message(
+            'Error',
+            'Please enter a valid ASN!',
+            'Response'
+        )
+    await ctx.send(embed=embed)
+
 
 
 @bot.command(name="whois", help='Check what Company an ASN/IP belongs to', pass_context=True)

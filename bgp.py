@@ -79,12 +79,23 @@ class RouteServerInteraction(object):
                 PrettyTable: Formatted table containing
                 location, route server, ASN & BGP state
         """
+        # Check if ASN is Valid
         if isinstance(asn, str):
             asn = self._int_convert(asn)
             if not asn:
-                return 'Please enter a valid ASN!'
+                return 'Please enter a valid ASN!', 'Response'
+        
+        # Cheeky
+        if asn == 1221:
+            return 'The day Telstra peer on EdgeIX Route Servers is the day Joe shaves his beard..', 'No Chance'
 
         data = self.check_asn(asn)
+
+        # ASN isnt present on any Route Servers
+        if len(data) == 0:
+            response = f'AS{asn} is not present on any Route Servers.. perhaps they should email peering@edgeix.net?'
+            return response, 'Response'
+
         return self.parse(data)
         
     
@@ -156,7 +167,7 @@ class RouteServerInteraction(object):
                         route_server_data['state']
                     ]
                 )
-        return table, route_server_data['name']
+        return f'```{table}```', route_server_data['name']
     
     def _load_bird_data(self) -> dict:
         """
