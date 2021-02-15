@@ -52,7 +52,17 @@ class RouteServerInteraction(object):
                 'rs2': {
                     'url': os.getenv('PER_RS2')
                 }
-            }
+            },
+            'DRW': {
+                'rs1': {
+                    'url': os.getenv('DRW_RS1')
+                    }
+                },
+            'HBA': {
+                'rs1': {
+                    'url': os.getenv('HBA_RS1')
+                    }
+                }
         }
 
         # Load data on init
