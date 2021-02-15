@@ -18,6 +18,7 @@ bot = commands.Bot(command_prefix='!')
 client = discord.Client()
 
 ASN_REGEX = re.compile(r'^[0-9]+$')
+IP_REGEX = re.compile(r'^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$')
 
 RouteServers = RouteServerInteraction()
 
@@ -122,16 +123,56 @@ async def peer_status(ctx, *, message):
     await ctx.send(embed=embed)
 
 
-
 @bot.command(name="whois", help='Check what Company an ASN/IP belongs to', pass_context=True)
 async def whois(ctx, *, message):
-    # TODO!
-    pass
+    """
+        Check who an ASN or IP belongs to on the EdgeIX Fabric
+
+        Arguments:
+            message (str): Message containing ASN or IP
+        
+        Example:
+            !whois 9268
+    """
+    as_match = ASN_REGEX.match(message.strip())
+    if as_match:
+        x = RouteServers.asns.get(int(message))
+        if x is None:
+            title = f'AS{message} is unknown to EdgeIX'
+            header ='Quick Links:'
+            message = f'https://bgptoolkit.net/api/asn/{message}\nhttps://bgp.he.net/AS{message}'
+        else:
+            title = x.get('descr')
+            header = 'Peering in the follow locations:'
+            message = '\n'.join(i for i in x.get('locs'))
+
+    ip_match = IP_REGEX.match(message.strip())
+    if ip_match:
+        x = RouteServers.ips.get(message)
+        if x is None:
+            title = f'{message} is unknown to EdgeIX'
+            header ='Quick Links:'
+            message = f'https://bgptoolkit.net/api/ca/{message}\nhttps://bgp.he.net/ip/{message}'
+        else:
+            title = x.get('descr')
+            header = 'Allocation:'
+            message = f'{message} is allocated to {x.get("descr")} on the {x.get("loc")} EdgeIX Fabric'
+
+    embed = await format_message(
+        title, message, header
+    )
+    await ctx.send(embed=embed)
 
 
 @bot.command(name="rs_stats", help='Check number of sessions for a given City', pass_context=True)
 async def rs_stats(ctx, *, message):
     # TODO!
+    pass
+
+
+@bot.command(name="whois_peering", help='Check who is peering for a given City', pass_context=True)
+async def whois_peering(ctx, *, message):
+    # TODO
     pass
 
 

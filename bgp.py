@@ -182,10 +182,71 @@ class RouteServerInteraction(object):
             for rs, rsd in loc_data.items():
                 try:
                     rsd['data'] = requests.get(rsd.get('url')).json()
-                except requests.exceptions.ConnectionError:
-                    rsd['data'] = 'Route Server Unavailable'
+                except (requests.exceptions.ConnectionError, json.decoder.JSONDecodeError):
                     rsd['error'] = True
+
         return self.route_servers
+    
+    @property
+    def asns(self) -> dict:
+        """
+            Property object to return nested dict
+            containing locations an ASN is present
+            on the Route Servers
+            
+            Return:
+                dict: Keyed by ASN, containing
+                description & locations present
+        """
+        asns = {}
+
+        for loc, data in self.route_servers.items():
+            for rs, rsd in data.items():
+                if rsd.get('data') is not None:
+                    for _, asn_data in rsd['data']['protocols'].items():
+                        asn = asn_data.get('neighbor_as')
+                        if asn is not None:
+                            locs = asns[asn].get('locs', []) if asns.get(asn) is not None else []
+                            locs.append(f'{loc} - {rs}')
+                            asns.update(
+                                {
+                                    asn: {
+                                        'descr': asn_data.get('description'),
+                                        'locs': locs
+                                    } 
+                                }
+                            )
+        return asns
+    
+    @property
+    def ips(self) -> dict:
+        """
+            Property object to return nested dict
+            containing allocated IP to ASN & Location
+            mapping
+            
+            Return:
+                dict: Keyed by IP, containing
+                description & location
+        """
+        ips = {}
+
+        for loc, data in self.route_servers.items():
+            for rs, rsd in data.items():
+                if rsd.get('data') is not None:
+                    for _, asn_data in rsd['data']['protocols'].items():
+                        ip = asn_data.get('neighbor_address')
+                        if ip is not None:
+                            ips.update(
+                                {
+                                    ip: {
+                                        'descr': asn_data.get('description'),
+                                        'loc': loc
+                                    } 
+                                }
+                            )
+        return ips
+
     
     def _int_convert(self, item: str) -> int:
         """
