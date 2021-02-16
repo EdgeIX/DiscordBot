@@ -31,6 +31,17 @@ async def nine_nine(ctx):
             'Cool. Cool cool cool cool cool cool cool, '
             'no doubt no doubt no doubt no doubt.'
         ),
+        'Title of your sex tape.',
+        'Nine Nine!',
+        'Noice',
+        'Jake, piece of advice: just give up. It’s the Boyle way. It’s why our family crest is a white flag.',
+        'Great, I’d like your $8-est bottle of wine, please.',
+        'Aw, man. All the orange soda spilled out of my cereal.',
+        'Rules are made to be broken.',
+        'If I die, turn my tweets into a book.',
+        'Love, it sustains you. It’s like oatmeal.,
+        'Is it a crime to steal bread to feed your family?',
+        'Be myself, what kind of garbage advice is that?',
     ]
 
     embed = await format_message('Brooklyn Nine Nine', random.choice(brooklyn_99_quotes))
