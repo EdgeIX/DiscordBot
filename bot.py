@@ -39,7 +39,7 @@ async def nine_nine(ctx):
         'Aw, man. All the orange soda spilled out of my cereal.',
         'Rules are made to be broken.',
         'If I die, turn my tweets into a book.',
-        'Love, it sustains you. It’s like oatmeal.,
+        'Love, it sustains you. It’s like oatmeal.',
         'Is it a crime to steal bread to feed your family?',
         'Be myself, what kind of garbage advice is that?',
     ]
