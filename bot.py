@@ -64,18 +64,25 @@ async def add_asn(ctx, *, message):
     if match:
         asn = f'AS{message}'
         user = ctx.message.author
+
         if get(ctx.guild.roles, name=asn):
             await user.add_roles(discord.utils.get(ctx.guild.roles, name=asn))
-            embed = await format_message('Role Addition', f'Successfully added {asn} to {user.display_name}')
-            await ctx.send(embed=embed)
+            response = f'Successfully added {asn} to {user.display_name}'
         else:
             role = await ctx.guild.create_role(name=asn)
             await user.add_roles(role)
-            embed = await format_message('Role Addition', f'Successfully created and added {asn} to {user.display_name}')
-            await ctx.send(embed=embed)
+            response = f'Successfully created and added {asn} to {user.display_name}'
+        
+        # Lets check if the ASN is a valid EdgeIX Peer (Configured via RS)
+        if RouteServers.is_peer(int(message)):
+            response = f'{asn} is a Valid EdgeIX Peer!\n\n{response}'
+            await user.add_roles(discord.utils.get(ctx.guild.roles, name='peer'))
+
     else:
         embed = format_message('Role Addition', f'Please enter a valid ASN. You provided: {message}')
-        await ctx.send(embed=embed)  
+
+    embed = await format_message('Role Addition', response)
+    await ctx.send(embed=embed)  
 
 
 @bot.command(name="removeasn",

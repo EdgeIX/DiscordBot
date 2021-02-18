@@ -169,6 +169,24 @@ class RouteServerInteraction(object):
                 )
         return f'```{table}```', route_server_data['name']
     
+    def is_peer(self, asn: int) -> bool:
+        """
+            Check if a given ASN is a Configured Peer
+            of any Route Server
+
+            Arguments:
+                asn (int): ASN to check
+            
+            Returns:
+                bool: True if ASN exists
+        """
+        if isinstance(asn, str):
+            asn = self._int_convert(asn)
+            if not asn:
+                return False
+
+        return True if asn in self.asns.keys() else False
+    
     def _load_bird_data(self) -> dict:
         """
             Inner function to obtain data from IXPM, adds
@@ -186,7 +204,7 @@ class RouteServerInteraction(object):
                     rsd['error'] = True
 
         return self.route_servers
-    
+
     @property
     def asns(self) -> dict:
         """
