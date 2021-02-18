@@ -171,7 +171,14 @@ class RouteServerInteraction(object):
     
     def peers_by_location(self, location: str) -> list:
         """
+            Return a list of peers for a given City
 
+            Arguments:
+                location (str): Location key
+            
+            Return:
+                list: List of Descriptions from the Route Servers
+                in the given Cities peering sessions
         """
         data = self.route_servers.get(location.upper())
 
@@ -190,7 +197,6 @@ class RouteServerInteraction(object):
             
             Return:
                 bool: True if exists
-
         """
         return True if self.route_servers.get(location.upper()) is not None else False
 
