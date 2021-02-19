@@ -186,7 +186,7 @@ class RouteServerInteraction(object):
             entry.get('description')
             for rs, rsd in data.items() if not rsd.get('error', False) for key, entry in rsd['data']['protocols'].items()
         ]
-        return response
+        return list(set(response))
     
     def is_valid_location(self, location: str) -> bool:
         """
