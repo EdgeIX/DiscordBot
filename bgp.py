@@ -168,7 +168,7 @@ class RouteServerInteraction(object):
                     ]
                 )
         return f'```{table}```', route_server_data['name']
-    
+
     def is_peer(self, asn: int) -> bool:
         """
             Check if a given ASN is a Configured Peer
@@ -187,6 +187,37 @@ class RouteServerInteraction(object):
 
         return True if asn in self.asns.keys() else False
     
+    def peers_by_location(self, location: str) -> list:
+        """
+            Return a list of peers for a given City
+
+            Arguments:
+                location (str): Location key
+            
+            Return:
+                list: List of Descriptions from the Route Servers
+                in the given Cities peering sessions
+        """
+        data = self.route_servers.get(location.upper())
+
+        response = [
+            entry.get('description')
+            for rs, rsd in data.items() if not rsd.get('error', False) for key, entry in rsd['data']['protocols'].items()
+        ]
+        return response
+    
+    def is_valid_location(self, location: str) -> bool:
+        """
+            Check if a Route Server location is valid
+
+            Arguments:
+                location (str): Location key to validate
+            
+            Return:
+                bool: True if exists
+        """
+        return True if self.route_servers.get(location.upper()) is not None else False
+
     def _load_bird_data(self) -> dict:
         """
             Inner function to obtain data from IXPM, adds
@@ -265,6 +296,15 @@ class RouteServerInteraction(object):
                             )
         return ips
 
+    @property
+    def locations(self) -> list:
+        """
+            Property object to return all available locations
+
+            Return:
+                list: List of keys from self.route_servers
+        """
+        return set(list(self.route_servers.keys()))
     
     def _int_convert(self, item: str) -> int:
         """
