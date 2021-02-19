@@ -183,8 +183,65 @@ async def rs_stats(ctx, *, message):
 
 @bot.command(name="whois_peering", help='Check who is peering for a given City', pass_context=True)
 async def whois_peering(ctx, *, message):
-    # TODO
-    pass
+    """
+        Check what ASNs are peering at a given location.
+
+        Logic needed to be applied within this function to get around
+        the 1024 byte limit in the Discord.py Embed function
+
+        Arguments:
+            message (str): Message containing Location
+        
+        Example:
+            !whois_peering BNE
+    """
+    # Check that its a valid Location
+    if RouteServers.is_valid_location(message):
+        # Grab peers for the location & create a copy of the list that we can modify.
+        # This is copied as we cannot modify the items/indexes in a list while iterating
+        peers = RouteServers.peers_by_location(message)
+        total = len(peers)
+        peers_modified = peers[:]
+
+        first = True
+
+        while len(peers_modified) != 0:
+
+            char_counter = 0
+            can_send = []
+
+            while char_counter < 1024:
+                # As we iterate a different list we need to set the original peers
+                # to be a copy of the modified list after the character limit is hit
+                # and while loop is broke. Failure to do this would result in an IndexError
+                # when attempting to pop 
+                peers = peers_modified[:]
+                for peer in peers:
+                    # count new line chars too
+                    char_counter += len(f'{peer}\n')
+                    if char_counter > 1024: break
+                    can_send.append(peer)
+                    peers_modified.pop(0)
+                break
+
+            header = f'Peers for {message.upper()} (Total: {total})' if first \
+                        else f'Peers for {message.upper()} Cont. (Total: {total})'
+
+            response = '\n'.join(can_send)
+            embed = await format_message(
+                'Who is Peering?',
+                response,
+                header
+            )
+            first = False
+            await ctx.send(embed=embed)
+    else:
+        embed = await format_message(
+            'Who is Peering?',
+            ', '.join(RouteServers.locations),
+            'Invalid Location!'
+        )
+        await ctx.send(embed=embed)
 
 
 @bot.event
