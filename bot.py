@@ -64,18 +64,25 @@ async def add_asn(ctx, *, message):
     if match:
         asn = f'AS{message}'
         user = ctx.message.author
+
         if get(ctx.guild.roles, name=asn):
             await user.add_roles(discord.utils.get(ctx.guild.roles, name=asn))
-            embed = await format_message('Role Addition', f'Successfully added {asn} to {user.display_name}')
-            await ctx.send(embed=embed)
+            response = f'Successfully added {asn} to {user.display_name}'
         else:
             role = await ctx.guild.create_role(name=asn)
             await user.add_roles(role)
-            embed = await format_message('Role Addition', f'Successfully created and added {asn} to {user.display_name}')
-            await ctx.send(embed=embed)
+            response = f'Successfully created and added {asn} to {user.display_name}'
+        
+        # Lets check if the ASN is a valid EdgeIX Peer (Configured via RS)
+        if RouteServers.is_peer(int(message)):
+            response = f'{asn} is a Valid EdgeIX Peer!\n\n{response}'
+            await user.add_roles(discord.utils.get(ctx.guild.roles, name='peer'))
+
     else:
         embed = format_message('Role Addition', f'Please enter a valid ASN. You provided: {message}')
-        await ctx.send(embed=embed)  
+
+    embed = await format_message('Role Addition', response)
+    await ctx.send(embed=embed)  
 
 
 @bot.command(name="removeasn",
@@ -183,8 +190,65 @@ async def rs_stats(ctx, *, message):
 
 @bot.command(name="whois_peering", help='Check who is peering for a given City', pass_context=True)
 async def whois_peering(ctx, *, message):
-    # TODO
-    pass
+    """
+        Check what ASNs are peering at a given location.
+
+        Logic needed to be applied within this function to get around
+        the 1024 byte limit in the Discord.py Embed function
+
+        Arguments:
+            message (str): Message containing Location
+        
+        Example:
+            !whois_peering BNE
+    """
+    # Check that its a valid Location
+    if RouteServers.is_valid_location(message):
+        # Grab peers for the location & create a copy of the list that we can modify.
+        # This is copied as we cannot modify the items/indexes in a list while iterating
+        peers = RouteServers.peers_by_location(message)
+        total = len(peers)
+        peers_modified = peers[:]
+
+        first = True
+
+        while len(peers_modified) != 0:
+
+            char_counter = 0
+            can_send = []
+
+            while char_counter < 1024:
+                # As we iterate a different list we need to set the original peers
+                # to be a copy of the modified list after the character limit is hit
+                # and while loop is broke. Failure to do this would result in an IndexError
+                # when attempting to pop 
+                peers = peers_modified[:]
+                for peer in peers:
+                    # count new line chars too
+                    char_counter += len(f'{peer}\n')
+                    if char_counter > 1024: break
+                    can_send.append(peer)
+                    peers_modified.pop(0)
+                break
+
+            header = f'Peers for {message.upper()} (Total: {total})' if first \
+                        else f'Peers for {message.upper()} Cont. (Total: {total})'
+
+            response = '\n'.join(can_send)
+            embed = await format_message(
+                'Who is Peering?',
+                response,
+                header
+            )
+            first = False
+            await ctx.send(embed=embed)
+    else:
+        embed = await format_message(
+            'Who is Peering?',
+            ', '.join(RouteServers.locations),
+            'Invalid Location!'
+        )
+        await ctx.send(embed=embed)
 
 
 @bot.event
