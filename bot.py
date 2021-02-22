@@ -21,7 +21,7 @@ ASN_REGEX = re.compile(r'^[0-9]+$')
 IP_REGEX = re.compile(r'^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$')
 
 RouteServers = RouteServerInteraction()
-
+  
 @bot.command(name='99', help='Responds with a random quote from Brooklyn 99')
 async def nine_nine(ctx):
     brooklyn_99_quotes = [
@@ -78,6 +78,10 @@ async def add_asn(ctx, *, message):
             response = f'{asn} is a Valid EdgeIX Peer!\n\n{response}'
             role = ctx.guild.get_role(int(os.getenv('PEER_ROLE')))
             await user.add_roles(discord.utils.get(ctx.guild.roles, name=role.name))
+        
+        # Remove visitor role if present
+        role = ctx.guild.get_role(int(os.getenv('RULES_ACCEPTED_ROLE')))
+        await user.remove_roles(discord.utils.get(ctx.guild.roles, name=role.name))
 
     else:
         embed = format_message('Role Addition', f'Please enter a valid ASN. You provided: {message}')
@@ -263,9 +267,49 @@ async def on_member_join(member):
     """
     channel = bot.get_channel(welcome_channel_id)
     guild = member.guild
+    # TODO: Change welcome message to include info about reacting
     message = f'Hello {member.mention}, Welcome to {guild.name} Discord server, please add your peer ASN by typing !addasn <asn>'
     embed = await format_message('Welcome!', message)
     await channel.send(embed=embed)
+
+
+@bot.event
+async def on_ready():
+    """
+        Run on bot Startup
+    """
+    await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name='for more potential peers..'))
+    print(f'Connected to bot: {bot.user.name}')
+
+
+@bot.event
+async def on_raw_reaction_add(payload):
+    """
+        Handle user reactions to messages
+
+        - Listen for reaction to rules message, assign role
+
+        Arguments:
+            payload (RawReactionActionEvent): Payload containing
+            attributes relating to the reaction event
+
+    """
+    # Check if this message is the message in bot.rules_msg.id. payload.emoji doesnt return a valid
+    # id, meaning we have to use the literal emoji in this code :(
+    if payload.message_id == bot.rules_msg.id and payload.emoji.name == '✅':
+        # Don't execute when the bot adds the initial reaction
+        if payload.user_id == bot.user.id:
+            return
+        
+        guild = bot.get_guild(payload.guild_id)
+        role = guild.get_role(int(os.getenv('RULES_ACCEPTED_ROLE')))
+
+        await payload.member.add_roles(discord.utils.get(guild.roles, name=role.name))
+        await bot.rules_msg.remove_reaction(payload.emoji.name, payload.member)
+
+    # Remove all other reactions to avoid confusion
+    elif payload.message_id == bot.rules_msg.id:
+        await bot.rules_msg.remove_reaction(payload.emoji.name, payload.member)
 
 
 async def format_message(title: str, value: str, header: str = 'Response') -> discord.embeds.Embed:
@@ -285,5 +329,45 @@ async def format_message(title: str, value: str, header: str = 'Response') -> di
     embed.set_author(name='EdgeIX Bot', url='https://edgeix.net', icon_url='https://i.imgur.com/63RePV2.png')
     embed.add_field(name=header, value=value, inline=True)
     return embed
+
+
+async def post_rules():
+    """
+        Post rules to a channel to allow users to interact to gain
+        further role privileges
+    """
+    await bot.wait_until_ready()
+
+    rules = [
+        'This server is open to all industry professionals who are interested in or involved with peering. Your conduct is on display, so please treat this space with professionalism!',
+        '\n**If you are an EdgeIX peer,** you will need to register your Discord account against your ASN to receive "Peer" access, which gives you the ability to talk in our private peering channels. This can be done by typing **!addasn <yourASNhere>** in any channel. If you are not a peer, your account will be provided with access to our Public discussion channels only.',
+        '\nBy joining this server you agree to the Discord Terms (https://discord.com/terms) and Guidelines (https://discord.com/guidelines).',
+        '\nPlease click the ✅ to indicate your acceptance and enter the server.',
+    ]
+    embed = await format_message(
+        'Welcome to the EdgeIX Discord server!',
+        '\n'.join(rules),
+        'Overview'
+    )
+    channel = bot.get_channel(int(os.getenv('RULES_CHANNEL')))
+
+    # Delete all existing messages, modify bot rules if a message is present
+    # to prevent spamming the channel with a ping every time the bot is started
+    messages = await channel.history().flatten()
+    message_modified = False
+
+    for message in messages:
+        if message.author.id == bot.user.id and not message_modified:
+            await message.edit(embed=embed)
+            bot.rules_msg = message
+            message_modified = True
+        else:
+            await message.delete()
+    
+    if not message_modified:
+        bot.rules_msg = await channel.send(embed=embed)
+        await bot.rules_msg.add_reaction('\U00002705')
+
+bot.loop.create_task(post_rules())
 
 bot.run(token)
