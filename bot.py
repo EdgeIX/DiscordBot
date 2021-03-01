@@ -78,11 +78,11 @@ async def add_asn(ctx, *, message):
         # Lets check if the ASN is a valid EdgeIX Peer (Configured via RS)
         if RouteServers.is_peer(int(message)):
             response = f'{asn} is a Valid EdgeIX Peer!\n\n{response}'
-            await user.add_roles(discord.utils.get(ctx.guild.roles, name='peer'))
+            role = ctx.guild.get_role(int(os.getenv('PEER_ROLE')))
+            await user.add_roles(discord.utils.get(ctx.guild.roles, name=role.name))
         
         # Remove visitor role if present
         role = ctx.guild.get_role(int(os.getenv('RULES_ACCEPTED_ROLE')))
-
         await user.remove_roles(discord.utils.get(ctx.guild.roles, name=role.name))
 
     else:
