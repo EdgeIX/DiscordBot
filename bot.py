@@ -12,9 +12,11 @@ from bgp import RouteServerInteraction
 
 load_dotenv()
 token = os.getenv('DISCORD_TOKEN')
-welcome_channel_id = os.getenv('WELCOME_CHANNEL')
+welcome_channel_id = int(os.getenv('WELCOME_CHANNEL'))
 
-bot = commands.Bot(command_prefix='!')
+intents = discord.Intents.all()
+
+bot = commands.Bot(command_prefix='!', intents=intents)
 client = discord.Client()
 
 ASN_REGEX = re.compile(r'^[0-9]+$')
@@ -268,7 +270,7 @@ async def on_member_join(member):
     channel = bot.get_channel(welcome_channel_id)
     guild = member.guild
     # TODO: Change welcome message to include info about reacting
-    message = f'Hello {member.mention}, Welcome to {guild.name} Discord server, please add your peer ASN by typing !addasn <asn>'
+    message = f'Hello {member.mention}, Welcome to {guild.name} Discord server! If you wish, please use !addasn <myasn> to update your roles (psst.. if you are a Peer this will give you exclusive access)'
     embed = await format_message('Welcome!', message)
     await channel.send(embed=embed)
 
