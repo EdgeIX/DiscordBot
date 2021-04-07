@@ -274,6 +274,21 @@ async def on_member_join(member):
     embed = await format_message('Welcome!', message)
     await channel.send(embed=embed)
 
+@bot.event
+async def on_member_remove(member):
+    """
+        Message advising that user has left the Discord.
+
+        Arguments:
+            member (obj): Discord.py User Object
+
+    """
+    channel = bot.get_channel(welcome_channel_id)
+    guild = member.guild
+    # TODO: make a better bye bye message.
+    message = f'Bye bye {member.mention}'
+    embed = await format_message('Please don't Go!', message)
+    await channel.send(embed=embed)
 
 @bot.event
 async def on_ready():
