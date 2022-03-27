@@ -13,6 +13,8 @@ from utils.classes import NoneClass
 from utils.errors import print_error
 from utils.route_server import RouteServerInteraction
 from utils.config import ProjectConfig
+from utils.bgp import BGPToolkitAPI
+from utils.ixp import IXPManager
 
 
 __all__ = ("EdgeIXBot", "EdgeIXBotContext")
@@ -45,13 +47,19 @@ class EdgeIXBot(commands.Bot):
         self.started_at = datetime.datetime.utcnow()
 
         # For api requests
-        #self.session = session
+        self.session = session
 
         # For config items
         self.config = ProjectConfig().c
 
         # Route Server interaction
         self.rs = RouteServerInteraction()
+
+        # IXP Manager Interaction
+        self.ixp = IXPManager()
+
+        # For BGP Toolkit interaction
+        self.bgptoolkit = BGPToolkitAPI()
 
         super().__init__(
             command_prefix="!",

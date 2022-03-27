@@ -21,3 +21,20 @@ class ProjectConfig(object):
     @property
     def c(self) -> dict:
         return self.env_config
+
+def get_conf_item(key: str):
+    """
+    Adhoc get item from config
+
+    Arguments:
+        key (str): Config Key
+    """
+    try:
+        env = os.environ["PYTHON_ENV"]
+        env_config = prod
+    except KeyError:
+        env = "dev"
+        env_config = dev
+    
+    item = env_config.get(key)
+    return item

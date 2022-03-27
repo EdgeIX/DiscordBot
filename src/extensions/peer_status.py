@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import asyncio
-from typing import Optional
 
 import discord
 from discord import app_commands
@@ -8,17 +7,15 @@ from discord.ext import commands
 
 from utils.functions import format_message
 from utils.constants import ASN_REGEX
-#from utils.permissions import GLOBAL_ADMIN_PERMISSION
+from utils.config import get_conf_item
 
 class PeerStatus(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
-        print("init peer")
-        print(bot.tree.__dict__)
 
     @app_commands.command(name="peer", description="test")
-    @app_commands.guilds(discord.Object(id=315675857639178251))
+    @app_commands.guilds(discord.Object(id=get_conf_item("GUILD_ID")))
     #@commands.has_any_role(*GLOBAL_ADMIN_PERMISSION)
     async def peer_status(self, interaction: discord.Interaction, asn: int) -> discord.Embed:
         """
@@ -42,5 +39,3 @@ class PeerStatus(commands.Cog):
 async def setup(bot: commands.Bot) -> None:
     """Adds the cog to the bot"""
     await bot.add_cog(PeerStatus(bot))
-    #await bot.tree.sync(guild=discord.Object(id=315675857639178251))
-    #await bot.add_cog(PeerStatus(bot), guilds=[discord.Object(id=315675857639178251)])

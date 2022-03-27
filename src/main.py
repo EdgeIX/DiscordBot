@@ -82,10 +82,8 @@ async def on_command_errror(ctx, error):
 async def main():
     async with bot:
         bot.loop.create_task(on_ready())
-        #await bot.tree.sync(guild=discord.Object(id=315675857639178251))
         try:
-            #await bot.start(bot.config.c["TOKEN"])
-            await bot.start("ODEwMzQ3NTE4MjgxOTA4MjY0.YCiU7w.-YWCNHmywFKsbvCx2BjnH2fxTH4")
+            await bot.start(bot.config["TOKEN"])
         except KeyboardInterrupt:
             console.print("[red]Bot Closing[/]")
         except discord.PrivilegedIntentsRequired:
