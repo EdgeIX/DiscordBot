@@ -68,7 +68,6 @@ class PeerInformation(commands.Cog):
             else:
                 #route_server_enabled.append(v6.get("routeserver"))
                 v6_state = self.bot.rs.get_session_from_ip(v6.get("address"))
-                print(v6_state)
                 route_server_enabled.append(True) if v6_state.get("state") == "up" else route_server_enabled.append(False)
                 table.add_row([
                     ixp["name"],
