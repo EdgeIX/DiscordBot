@@ -18,7 +18,7 @@ class CommandSync(commands.Cog):
 
     @app_commands.command(name="admin-sync", description="Sync commands to guild")
     @app_commands.guilds(discord.Object(id=get_conf_item("GUILD_ID")))
-    @has_permissions(GLOBAL_ADMIN_PERMISSION)
+    @app_commands.checks.has_any_role(*GLOBAL_ADMIN_PERMISSION)
     async def admin_sync(self, interaction: discord.Interaction) -> discord.Embed:
         """
         Sync commands in the bot command tree to current discord guild

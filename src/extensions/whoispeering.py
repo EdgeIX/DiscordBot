@@ -17,7 +17,7 @@ class WhoIsPeering(commands.Cog):
 
     @app_commands.command(name="whois-peering", description="Who is Peering on a given fabric")
     @app_commands.guilds(discord.Object(id=get_conf_item("GUILD_ID")))
-    async def peer_status(self, interaction: discord.Interaction, location: PeeringLocations) -> discord.Embed:
+    async def whois_peering(self, interaction: discord.Interaction, location: PeeringLocations) -> discord.Embed:
         """
         Check what ASNs are peering at a given location.
 

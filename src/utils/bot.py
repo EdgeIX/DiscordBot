@@ -53,7 +53,7 @@ class EdgeIXBot(commands.Bot):
         self.config = ProjectConfig().c
 
         # Route Server interaction
-        self.rs = RouteServerInteraction()
+        self.rs = RouteServerInteraction(self)
 
         # IXP Manager Interaction
         self.ixp = IXPManager()

@@ -8,7 +8,7 @@ from utils.functions import format_message
 
 
 class ApprovalMenu(discord.ui.Select):
-    def __init__(self, requested: discord.User, asn: int, original_interaction: discord.Interaction, asname: str):
+    def __init__(self, requested: discord.User, original_interaction: discord.Interaction, asn: int, asname: str):
         """
         Approval Menu for ASN additions
 
@@ -59,7 +59,7 @@ class ApprovalMenu(discord.ui.Select):
             await self.requested.add_roles(role)
         
         # Perform check here via IXP to see if the ASN is a current peer of EdgeIX
-        if self.asn in interaction.client.asns.keys():
+        if self.asn in interaction.client.ixp.asns.keys():
             role = interaction.guild.get_role(interaction.client.config["PEER_ROLE"])
             await self.requested.add_roles(get(interaction.guild.roles, name=role.name))
 
@@ -68,6 +68,6 @@ class ApprovalMenu(discord.ui.Select):
         await self.requested.remove_roles(get(interaction.guild.roles, name=role.name))
 
 class ApprovalMenuView(discord.ui.View):
-    def __init__(self, requested: discord.User, asn: int, interaction: discord.Interaction, asname: str, timeout = 7200):
+    def __init__(self, requested: discord.User, interaction: discord.Interaction, asn: int, asname: str, timeout = 7200):
         super().__init__(timeout=timeout)
         self.add_item(ApprovalMenu(requested, asn, interaction, asname))

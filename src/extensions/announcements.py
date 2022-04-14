@@ -16,7 +16,7 @@ class EdgeIXAnnouncements(commands.Cog):
 
     @app_commands.command(name="announcement", description="test")
     @app_commands.guilds(discord.Object(id=get_conf_item("GUILD_ID")))
-    @has_permissions(GLOBAL_ADMIN_PERMISSION)
+    @app_commands.checks.has_any_role(*GLOBAL_ADMIN_PERMISSION)
     async def send_announcement(self, interaction: discord.Interaction) -> discord.Embed:
         await interaction.response.send_modal(EdgeIXAnnouncementModal())
 

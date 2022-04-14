@@ -26,7 +26,7 @@ class WelcomeToEdgeIX(commands.Cog):
         """
         guild = member.guild
         # TODO: Change welcome message to include info about reacting
-        message = f"Hello {member.mention}, Welcome to {guild.name} Discord server! If you wish, please use !addasn <myasn> to update your roles (psst.. if you are a Peer this will give you exclusive access)"
+        message = f"Hello {member.mention}, Welcome to {guild.name} Discord server! If you wish, please use /addasn <myasn> to update your roles (psst.. if you are a Peer this will give you exclusive access)"
         embed = await format_message("Welcome!", message)
         await self.channel.send(embed=embed)
 

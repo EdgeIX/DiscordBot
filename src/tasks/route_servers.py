@@ -23,13 +23,15 @@ class RouteServerLoop(commands.Cog):
     async def get_route_server_data(self):
         for loc, loc_data in self.route_server_data.items():
             for rs, rsd in loc_data.items():
-                try:
-                    async with self.session.get(url=rsd.get("url"), timeout=10) as resp:
-                        data = await resp.json()
-                        rsd["data"] = data
-                except Exception as e:
-                    console.print(f"[red]HTTP GET for {rs} raised {str(e)}[/]")
-                    rsd["error"] = True
+                rsd["data"] = {}
+                for protocol in ["ipv4", "ipv6"]:
+                    try:
+                        async with self.session.get(url=rsd.get('url').format(protocol=protocol), timeout=10) as resp:
+                            data = await resp.json()
+                            rsd["data"][protocol] = data
+                    except Exception as e:
+                        self.console.print(f"[red]HTTP GET for {rsd.get('url').format(protocol=protocol)} raised {str(e)}[/]")
+                        rsd["error"] = True
 
         self.bot.rs.data = self.route_server_data
     

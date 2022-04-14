@@ -24,13 +24,14 @@ class EdgeIXRules(commands.Cog):
 
         rules = [
             "This server is open to all industry professionals who are interested in or involved with peering. Your conduct is on display, so please treat this space with professionalism!",
-            "\n**If you are an EdgeIX peer,** you will need to register your Discord account against your ASN to receive 'Peer' access, which gives you the ability to talk in our private peering channels. This can be done by typing **!addasn <yourASNhere>** in any channel. If you are not a peer, your account will be provided with access to our Public discussion channels only.",
+            "\n**If you are an EdgeIX peer,** you will need to register your Discord account against your ASN to receive 'Peer' access, which gives you the ability to talk in our private peering channels. This can be done by typing **/addasn <asn>** in any channel. If you are not a peer, your account will be provided with access to our Public discussion channels only.",
             "\nBy joining this server you agree to the Discord Terms (https://discord.com/terms) and Guidelines (https://discord.com/guidelines).",
             "\nPlease click the ✅ to indicate your acceptance and enter the server.",
         ]
         embed = await format_message(
             "Welcome to the EdgeIX Discord server!",
             "\n".join(rules),
+            None,
             "Overview"
         )
 
@@ -49,7 +50,8 @@ class EdgeIXRules(commands.Cog):
         
         if not message_modified:
             self.bot.rules_msg = await self.channel.send(embed=embed)
-            await self.bot.rules_msg.add_reaction("\U00002705")
+
+        await self.bot.rules_msg.add_reaction("\U00002705")
     
     @send_welcome.before_loop
     async def before_send_welcome(self):

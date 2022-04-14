@@ -15,7 +15,7 @@ class GracefulShut(commands.Cog):
 
     @app_commands.command(name="gshut", description="Graceful shutdown of the bot")
     @app_commands.guilds(discord.Object(id=get_conf_item("GUILD_ID")))
-    @has_permissions(GLOBAL_ADMIN_PERMISSION)
+    @app_commands.checks.has_any_role(*GLOBAL_ADMIN_PERMISSION)
     async def graceful_shut(self, interaction: discord.Interaction):
         await self.bot.close()
 
