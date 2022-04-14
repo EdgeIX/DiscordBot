@@ -10,6 +10,9 @@ config = {
     "IXPM_PEER_INFO": os.getenv("IXPM_PEER_INFO"),
     "PEER_ROLE": os.getenv("PEER_ROLE"),
     "GUILD_ID": os.getenv("GUILD_ID"),
+    "EVENTS_DIR": "/discordbot/src/events/",
+    "TASKS_DIR": "/discordbot/src/tasks/",
+    "EXTENSIONS_DIR": "/discordbot/src/extensions/",
     "ROUTE_SERVERS": {
         "SYD": {
             "rs1": {

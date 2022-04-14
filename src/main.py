@@ -21,18 +21,15 @@ console = Console()
 logging.basicConfig(level="INFO", format="%(message)s", datefmt="[%X]", handlers=[RichHandler()])
 
 def build_extensions():
-    #for file in os.listdir(bot.config.c["EXTENSIONS_DIR"]):
-    for file in os.listdir("extensions/"):
+    for file in os.listdir(bot.config.c["EXTENSIONS_DIR"]):
         if file.endswith(".py") and not file in blacklisted_extensions:
             initial_extensions.append("extensions." + file[:-3])
     
-    #for file in os.listdir(bot.config.c["TASKS_DIR"]):
-    for file in os.listdir("tasks/"):
+    for file in os.listdir(bot.config.c["TASKS_DIR"]):
         if file.endswith(".py") and not file in blacklisted_extensions:
             initial_extensions.append("tasks." + file[:-3])
 
-    #for file in os.listdir(bot.config.c["MENUS_DIR"]):
-    for file in os.listdir("events/"):
+    for file in os.listdir(bot.config.c["EVENTS_DIR"]):
         if file.endswith(".py") and not file in blacklisted_extensions:
             initial_extensions.append("events." + file[:-3])
 
