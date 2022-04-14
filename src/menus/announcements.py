@@ -3,7 +3,7 @@ from discord import ui
 
 from utils.functions import format_message
 
-ANNOUNCEMENT_TYPES = ["outage", "general"]
+ANNOUNCEMENT_TYPES = ["outage", "general", "test"]
 
 class EdgeIXAnnouncementModal(ui.Modal, title="EdgeIX Announcement"):
     header = ui.TextInput(label="Header", required=True)
@@ -12,12 +12,15 @@ class EdgeIXAnnouncementModal(ui.Modal, title="EdgeIX Announcement"):
     #        discord.SelectOption(label="Test2",emoji="❌",description="Test2"),
     #    ]
     #)
-    announcement_type = ui.TextInput(label="Announcement Type", placeholder="outage/general", required=True)
+    announcement_type = ui.TextInput(label="Announcement Type", placeholder="outage/general/test", required=True)
     body = ui.TextInput(label="Body", style=discord.TextStyle.paragraph, required=True)
 
     async def on_submit(self, interaction: discord.Interaction):
         if self.announcement_type.value.lower() not in ANNOUNCEMENT_TYPES:
             await interaction.response.send_message(f"{self.announcement_type.value} is not a valid announcement type", ephemeral=True)
+        elif self.announcement_type.value.lower() == "test":
+            message = await format_message(self.header.value, self.body.value, None, "Announcement - Test")
+            await interaction.response.send_message(embed=message, ephemeral=True)
         else:
             channel = interaction.client.get_channel(interaction.client.config["ANNOUNCEMENT_CHANNEL_ID"])
             message = await format_message(self.header.value, self.body.value, None, "Announcement")

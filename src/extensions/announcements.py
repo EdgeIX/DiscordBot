@@ -14,7 +14,7 @@ class EdgeIXAnnouncements(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @app_commands.command(name="announcement", description="test")
+    @app_commands.command(name="announcement", description="Send an announcement with EdgeIX Branding")
     @app_commands.guilds(discord.Object(id=get_conf_item("GUILD_ID")))
     @app_commands.checks.has_any_role(*GLOBAL_ADMIN_PERMISSION)
     async def send_announcement(self, interaction: discord.Interaction) -> discord.Embed:
