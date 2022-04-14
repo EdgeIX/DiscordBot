@@ -38,6 +38,16 @@ class CommandSync(commands.Cog):
 
         raise error
 
+    @commands.command(name="admin-sync-legacy")
+    async def admin_sync_legacy(self, ctx, *, member: discord.Member = None):
+        """ Force bot.tree sync from legacy command method """
+        await self.bot.tree.sync(guild=discord.Object(id=get_conf_item("GUILD_ID")))
+        embed = await format_message(
+            "Success",
+            "Commands have been synced",
+        )
+        await ctx.send(embed=embed) 
+
 async def setup(bot: commands.Bot) -> None:
     """Adds the cog to the bot"""
     await bot.add_cog(CommandSync(bot))
