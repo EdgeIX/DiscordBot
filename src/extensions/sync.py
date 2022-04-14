@@ -42,11 +42,6 @@ class CommandSync(commands.Cog):
     async def admin_sync_legacy(self, ctx, *, member: discord.Member = None):
         """Says hello"""
         await self.bot.tree.sync(guild=discord.Object(id=get_conf_item("GUILD_ID")))
-        embed = await format_message(
-            "Success",
-            "Commands have been synced",
-        )
-        await ctx.send(embed=embed) 
 
 async def setup(bot: commands.Bot) -> None:
     """Adds the cog to the bot"""
