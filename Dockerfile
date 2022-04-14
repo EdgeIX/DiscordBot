@@ -1,17 +1,12 @@
-# set base image (host OS)
-FROM python:3.8
+FROM python:3.9-alpine
 
-# set the working directory in the container
-WORKDIR /code
+RUN mkdir -p /discordbot
+WORKDIR /discordbot/
 
-# copy the dependencies file to the working directory
-COPY requirements.txt .
+COPY . .
 
-# install dependencies
-RUN pip install -r requirements.txt
+RUN apk add --no-cache --virtual .build-deps g++ python3-dev libffi-dev openssl-dev git
+RUN pip install -U git+https://github.com/Rapptz/discord.py 
+RUN pip install -r /discordbot/requirements.txt
 
-# copy the content of the local src directory to the working directory
-COPY ./ .
-
-# command to run on container start
-CMD [ "python", "./bot.py" ] 
+CMD ["python3", "src/main.py"]
