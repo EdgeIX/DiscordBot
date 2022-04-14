@@ -40,7 +40,7 @@ class CommandSync(commands.Cog):
 
     @commands.command(name="admin-sync-legacy")
     async def admin_sync_legacy(self, ctx, *, member: discord.Member = None):
-        """Says hello"""
+        """ Force bot.tree sync from legacy command method """
         await self.bot.tree.sync(guild=discord.Object(id=get_conf_item("GUILD_ID")))
         embed = await format_message(
             "Success",
