@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import asyncio
 import aiohttp
+import time
 
 import discord
 from discord import app_commands
@@ -40,7 +41,7 @@ class EdgeIXMetrics(commands.Cog):
         embed.set_author(name="EdgeIX Bot", url="https://edgeix.net", icon_url="https://i.imgur.com/63RePV2.png")
         embed.add_field(name="Current In", value=f"{cur_in}Gbps", inline=True)
         embed.add_field(name="Current Out", value=f"{cur_out}Gbps", inline=True)
-        embed.set_image(url=aggregate_img)
+        embed.set_image(url=aggregate_img + f"&fuckcache={time.time()}")
 
         await interaction.response.send_message(embed=embed, ephemeral=False)
 
