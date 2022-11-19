@@ -2,8 +2,11 @@
 import os
 import asyncio
 
+try:
+    from config.production import config as prod
+except TypeError:
+    pass
 from config.dev import config as dev
-from config.production import config as prod
 
 class ProjectConfig(object):
 
@@ -14,13 +17,14 @@ class ProjectConfig(object):
         try:
             self.env = os.environ["PYTHON_ENV"]
             self.env_config = prod
-        except KeyError:
+        except (KeyError, TypeError):
             self.env = "dev"
             self.env_config = dev
     
     @property
     def c(self) -> dict:
         return self.env_config
+
 
 def get_conf_item(key: str):
     """

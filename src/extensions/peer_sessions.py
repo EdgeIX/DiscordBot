@@ -53,6 +53,12 @@ class PeerSessions(commands.Cog):
                 for connection in data["connection_list"]:
                     ixp = self.bot.ixp.ixp_id.get(connection["ixp_id"])
                     v4 = connection["vlan_list"][0].get("ipv4")
+
+                    # Fixes an issue where the port may not be configured yet, and no IPv4/IPv6 details exist.
+                    if not v4:
+                        print(f"Invalid v4 config for {ixp}")
+                        continue
+
                     v4_state = self.bot.rs.get_session_from_ip(v4.get("address"))
                     v6 = connection["vlan_list"][0].get("ipv4")
                     v6_state = self.bot.rs.get_session_from_ip(v6.get("address"))
@@ -61,8 +67,8 @@ class PeerSessions(commands.Cog):
                     table.add_row([
                         data["asnum"],
                         ixp["name"],
-                        v4_state.get("state"),
-                        v6_state.get("state"),
+                        v4_state.get("state").lower(),
+                        v6_state.get("state").lower(),
                     ])
                 embed = await format_message(
                 data.get("name"),
