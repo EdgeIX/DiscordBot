@@ -24,11 +24,13 @@ class ASNRoles(commands.Cog):
     async def add_asn(self, interaction: discord.Interaction, asn: int) -> discord.Embed:
         """
         """
+        await interaction.response.defer()
+
         member = interaction.user
         match = ASN_REGEX.match(str(asn))
         if not match:
             user_message = await format_message("ASN Approval", f"Hi <@{member.id}>, {asn} is not a valid ASN!")
-            await interaction.response.send_message(embed=user_message, ephemeral=True)
+            await interaction.followup.send(embed=user_message, ephemeral=True)
             return
 
         role = get(interaction.guild.roles, name=f"AS{asn}")
@@ -37,12 +39,12 @@ class ASNRoles(commands.Cog):
         # Check if the user already has a role
         if role in member.roles:
             user_message = await format_message("ASN Approval", f"Hi <@{member.id}>, you already have a role for AS{asn}")
-            await interaction.response.send_message(embed=user_message, ephemeral=True)
+            await interaction.followup.send(embed=user_message, ephemeral=True)
         else:
             user_message = await format_message("ASN Approval", f"Hi <@{member.id}>, your request to add yourself to AS{asn} ({asname}) has been queued for approval")
             staff_message = await format_message("ASN Approval", f"<@{member.id}> wishes to add themselves to AS{asn} ({asname}), please action this approval.")
 
-            message_id = await interaction.response.send_message(embed=user_message)
+            message_id = await interaction.followup.send(embed=user_message)
             await self.channel.send(view=ApprovalMenuView(member, asn, interaction, asname),embed=staff_message)
     
     @app_commands.command(name="removeasn", description="Remove an ASN role from yourself")

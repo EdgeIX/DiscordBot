@@ -35,13 +35,13 @@ class ApprovalMenu(discord.ui.Select):
         if self.values[0] == "Approve":
             message = await format_message("ASN Approval", f"<@{self.requested.id}> has been granted role: AS{self.asn} ({self.asname}). Addition was approved by {member}")
             await interaction.response.edit_message(embed=message, view=None)
-            original = await self.og.original_message()
+            original = await self.og.original_response()
             await original.edit(embed=message)
             await self.add_asn(interaction)
         elif self.values[0] == "Deny":
             message = await format_message("ASN Approval", f"<@{self.requested.id}> has not been granted role: AS{self.asn} ({self.asname}). Addition was rejected by {member}")
             await interaction.response.edit_message(embed=message, view=None)
-            original = await self.og.original_message()
+            original = await self.og.original_response()
             await original.edit(embed=message)
 
     async def add_asn(self, interaction: discord.Interaction):
