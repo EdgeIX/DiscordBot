@@ -1,10 +1,7 @@
 #!/usr/bin/env python3
-import asyncio
-
 import discord
 from discord import app_commands
 from discord.ext import commands
-from discord.utils import get
 
 from prettytable import PrettyTable
 
@@ -60,15 +57,13 @@ class PeerSessions(commands.Cog):
                         continue
 
                     v4_state = self.bot.rs.get_session_from_ip(v4.get("address"))
-                    v6 = connection["vlan_list"][0].get("ipv4")
-                    v6_state = self.bot.rs.get_session_from_ip(v6.get("address"))
-                    if v6 is None:
-                        v6 = {"routeserver": "false"}
+                    v6 = connection["vlan_list"][0].get("ipv6")
+                    v6_state = self.bot.rs.get_session_from_ip(v6.get("address")) if v6 else None
                     table.add_row([
                         data["asnum"],
-                        ixp["name"],
-                        v4_state.get("state").lower(),
-                        v6_state.get("state").lower(),
+                        ixp["name"] if ixp else connection["ixp_id"],
+                        v4_state.get("state", "unknown").lower() if v4_state else "unknown",
+                        v6_state.get("state", "n/a").lower() if v6_state else "n/a",
                     ])
                 embed = await format_message(
                 data.get("name"),

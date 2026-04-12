@@ -1,10 +1,4 @@
 #!/usr/bin/env python3
-import json
-import os
-
-import requests
-from prettytable import PrettyTable
-
 from utils.config import ProjectConfig
 
 

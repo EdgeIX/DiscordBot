@@ -1,16 +1,11 @@
 #!/usr/bin/env python3
-import asyncio
 import datetime
-import os
-from operator import attrgetter
-from typing import Generator, List, Union
+from typing import Union
 
 import aiohttp
 import discord
 from discord.ext import commands
 
-from utils.classes import NoneClass
-from utils.errors import print_error
 from utils.route_server import RouteServerInteraction
 from utils.config import ProjectConfig
 from utils.bgp import BGPToolkitAPI
@@ -22,8 +17,8 @@ __all__ = ("EdgeIXBot", "EdgeIXBotContext")
 class EdgeIXBot(commands.Bot):
     """A subclass of commands.Bot."""
 
-    def __init__(self, *, specified_loop=None):
-        """Makes a instance of WMBot."""
+    def __init__(self):
+        """Create the bot instance and its shared runtime state."""
         intents = discord.Intents(
             members=True,
             presences=True,
@@ -35,19 +30,12 @@ class EdgeIXBot(commands.Bot):
             messages=True,
             message_content=True,
         )
-        loop = asyncio.get_event_loop()
-        session = aiohttp.ClientSession(loop=loop)
-
-        # Load all the environment variables
-        #load_dotenv("config/Bot/token.env")
-        #load_dotenv("config/Apis/tokens.env")
-        #load_dotenv("config/Database/db.env")
 
         # We save the bot start time to a variable
         self.started_at = datetime.datetime.utcnow()
 
-        # For api requests
-        self.session = session
+        # Shared aiohttp session is created during setup_hook.
+        self.session = None
 
         # For config items
         self.config = ProjectConfig().c
@@ -65,20 +53,24 @@ class EdgeIXBot(commands.Bot):
             command_prefix="!",
             case_insensitive=True,
             intents=intents,
-            session=session,
-            loop=specified_loop or loop,
             strip_after_prefix=True,
         )
 
         # For before_invoke
         self._before_invoke = self.before_invoke
 
+    async def setup_hook(self) -> None:
+        timeout = aiohttp.ClientTimeout(total=15)
+        self.session = aiohttp.ClientSession(timeout=timeout)
+        self.bgptoolkit = BGPToolkitAPI(self.session)
+
     async def get_context(self, message: discord.Message, *, cls: commands.Context = None) -> commands.Context:
         """Return the custom context."""
         return await super().get_context(message, cls=cls or EdgeIXBotContext)
 
     async def close(self):
-        await self.session.close()
+        if self.session is not None and not self.session.closed:
+            await self.session.close()
         await super().close()
 
     def get_user_named(self, name: str) -> Union[discord.User, None]:
@@ -143,7 +135,7 @@ class EdgeIXBot(commands.Bot):
         ctx : commands.Context
             Represents the context in which a command is being invoked under.
         """
-        await ctx.channel.trigger_typing()
+        await ctx.typing()
 
 
 class EdgeIXBotContext(commands.Context):
@@ -208,15 +200,7 @@ class EdgeIXBotContext(commands.Context):
                 if not args:
                     # If no content was passed (probably only embed was passed), we just raise the error
                     raise error
-                # We check if the content was in a codeblock
-                cb = await CodeblockConverter().convert(self, args[0])
-                if cb is None:
-                    # If it's not in a codeblock, we just make a url normally
-                    url = await self.bot.hastebin_upload(args[0])
-                else:
-                    # If it's in a codeblock, we make a url with the code language for syntax highlighting
-                    url = await self.bot.hastebin_upload(cb.content)
-                    url = url + "." + cb.language
+                url = await self.bot.hastebin_upload(args[0])
                 message = await self.send(
                     embed=discord.Embed(title="Content too long", description=f"Uploaded to cloud: {url}")
                 )

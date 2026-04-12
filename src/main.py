@@ -65,6 +65,10 @@ async def on_ready():
             f"Couldn't load {len(unloaded)}/{len(initial_extensions)} cogs ({', '.join(unloaded)}). Check the console for details."
         )
 
+    guild = discord.Object(id=bot.config["GUILD_ID"])
+    synced = await bot.tree.sync(guild=guild)
+    console.print(f"[green]Synced {len(synced)} application commands to guild {bot.config['GUILD_ID']}[/]")
+
     console.print("[green]Bot ready[/]")
 
     console.print("[green]All cogs loaded[/]")

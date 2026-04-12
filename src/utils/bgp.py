@@ -1,19 +1,15 @@
 #!/usr/bin/env python3
-import asyncio
 import aiohttp
-from typing import Optional
 
 from rich.console import Console
 
-import discord
-from discord.ext import commands, tasks
-
-class BGPToolkitAPI(commands.Cog):
+class BGPToolkitAPI:
     """
         Python Wrapper for bgptoolkit.net
     """
-    def __init__(self):
+    def __init__(self, session=None):
         self.console = Console()
+        self.session = session
 
     async def get_asn_name(self, asn):
         """ 
@@ -25,17 +21,23 @@ class BGPToolkitAPI(commands.Cog):
         Return:
             dict: JSON blop from bgptoolkit.net
         """
-        session = aiohttp.ClientSession()
         url = f"https://bgptoolkit.net/api/asn/{asn}"
+        if self.session is None:
+            self.console.print("[red]BGP Toolkit session is not ready[/]")
+            return "UNKNOWN"
 
-        async with session.get(url=url) as resp:
-            if resp.status == 200:
-                data = await resp.json()
-                try:
-                    return data["data"].get("name")
-                except Exception as e:
+        try:
+            async with self.session.get(url=url) as resp:
+                if resp.status != 200:
+                    self.console.print(f"[red]HTTP GET to {url} returned {resp.status}[/]")
                     return "UNKNOWN"
-            else:
-                self.console.print(f"[red]HTTP GET to {url} returned non 200 response[/]")
-                return {}
+                data = await resp.json()
+        except aiohttp.ClientError as exc:
+            self.console.print(f"[red]HTTP GET to {url} failed: {exc}[/]")
+            return "UNKNOWN"
+        except aiohttp.ContentTypeError:
+            self.console.print(f"[red]HTTP GET to {url} returned invalid JSON[/]")
+            return "UNKNOWN"
+
+        return data.get("data", {}).get("name", "UNKNOWN")
     
