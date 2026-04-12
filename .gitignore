@@ -3,3 +3,4 @@ __pycache__/
 env/
 src/config/dev.py
 CLAUDE.md
+AGENTS.md
