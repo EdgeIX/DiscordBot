@@ -17,6 +17,7 @@ class GracefulShut(commands.Cog):
     @app_commands.guilds(discord.Object(id=get_conf_item("GUILD_ID")))
     @app_commands.checks.has_any_role(*GLOBAL_ADMIN_PERMISSION)
     async def graceful_shut(self, interaction: discord.Interaction):
+        await interaction.response.send_message("Bot shutting down.", ephemeral=True)
         await self.bot.close()
 
     @graceful_shut.error
@@ -25,7 +26,10 @@ class GracefulShut(commands.Cog):
             await interaction.response.send_message("You are not authorised to run this command!", ephemeral=True)
             return
 
-        raise error
+        if interaction.response.is_done():
+            await interaction.followup.send("Shutdown failed. Please contact staff.", ephemeral=True)
+            return
+        await interaction.response.send_message("Shutdown failed. Please contact staff.", ephemeral=True)
 
 async def setup(bot):
     """Adds the cog to the bot"""

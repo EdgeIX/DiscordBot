@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
-import asyncio
 from discord import app_commands, Interaction
+
+def user_has_permissions(user, required: list) -> bool:
+    """Return whether a Discord user has one of the required role IDs."""
+    return any(role.id in required for role in getattr(user, "roles", ()))
+
 
 def has_permissions(required: list):
     async def actual_check(interaction: Interaction):
-        for role in interaction.user.roles:
-            if role.id in required:
-                return True
-        return False
-        #return await interaction.client.is_owner(interaction.user)
+        return user_has_permissions(interaction.user, required)
+
     return app_commands.check(actual_check)
 
     

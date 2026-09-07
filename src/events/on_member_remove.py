@@ -14,7 +14,13 @@ class GoodbyeFromEdgeIX(commands.Cog):
     """
     def __init__(self, bot):
         self.bot = bot
-        self.channel = bot.get_channel(bot.config["WELCOME_CHANNEL_ID"])
+
+    async def _get_channel(self):
+        channel_id = self.bot.config["WELCOME_CHANNEL_ID"]
+        channel = self.bot.get_channel(channel_id)
+        if channel is None:
+            channel = await self.bot.fetch_channel(channel_id)
+        return channel
 
     @commands.Cog.listener()
     async def on_member_remove(self, member: discord.Member):
@@ -28,7 +34,8 @@ class GoodbyeFromEdgeIX(commands.Cog):
         # TODO: make a better bye bye message.
         message = f"Bye bye {member.mention}"
         embed = await format_message("Please don't Go!", message)
-        await self.channel.send(embed=embed)
+        channel = await self._get_channel()
+        await channel.send(embed=embed)
 
 async def setup(bot):
     """Adds the cog to the bot"""

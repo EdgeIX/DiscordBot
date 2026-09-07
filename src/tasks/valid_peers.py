@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-import aiohttp
 from rich.console import Console
 from discord.ext import commands, tasks
+from utils.functions import HTTPRequestError, InvalidResponseError, fetch_json
 
 class ValidPeerLoop(commands.Cog):
     """
@@ -20,32 +20,45 @@ class ValidPeerLoop(commands.Cog):
     async def get_valid_peers(self):
         asns = {}
         try:
-            async with self.bot.session.get(
+            data = await fetch_json(
+                self.bot.session,
+                self.bot.config["IXPM_PEER_INFO"],
                 headers=self.headers,
-                url=self.bot.config["IXPM_PEER_INFO"],
-            ) as resp:
-                if resp.status != 200:
-                    self.console.print(
-                        f"[red]IXPM peer refresh failed with HTTP {resp.status}[/]"
-                    )
-                    return
-                self.bot.ixp.data = await resp.json()
-        except aiohttp.ClientError as exc:
-            self.console.print(f"[red]IXPM peer refresh failed: {exc}[/]")
-            return
-        except aiohttp.ContentTypeError:
-            self.console.print("[red]IXPM peer refresh returned invalid JSON[/]")
+                ssl=self.bot.config.get("IXPM_VERIFY_SSL", True),
+            )
+            member_list = data.get("member_list")
+            ixp_list = data.get("ixp_list")
+            if not isinstance(member_list, list) or not isinstance(ixp_list, list):
+                raise InvalidResponseError("IXPM peer refresh returned invalid schema")
+            ixp_id = {}
+            for ixp in ixp_list:
+                if not isinstance(ixp, dict) or "ixp_id" not in ixp:
+                    raise InvalidResponseError("IXPM peer refresh returned invalid IXP schema")
+                try:
+                    hash(ixp["ixp_id"])
+                except (KeyError, TypeError):
+                    raise InvalidResponseError("IXPM peer refresh returned invalid IXP schema")
+                ixp_id[ixp["ixp_id"]] = {"name": ixp.get("shortname", str(ixp["ixp_id"]))}
+        except HTTPRequestError as exc:
+            self.console.print(f"[red]{exc}[/]")
             return
 
-        for peer in self.bot.ixp.data["member_list"]:
-            asns[int(peer["asnum"])] = peer["name"]
+        for peer in member_list:
+            try:
+                asns[int(peer["asnum"])] = peer["name"]
+            except (KeyError, TypeError, ValueError):
+                self.console.print("[red]IXPM peer refresh returned invalid member schema[/]")
+                return
+        self.bot.ixp.data = data
         self.bot.ixp.asns = asns
-        # Update IXP ID dict
-        self.bot.ixp.make_ixp_dict()
+        self.bot.ixp.ixp_id = ixp_id
     
     @get_valid_peers.before_loop
     async def before_get_valid_peers(self):
         await self.bot.wait_until_ready()
+
+    def cog_unload(self):
+        self.get_valid_peers.cancel()
 
 async def setup(bot):
     """Adds the cog to the bot"""

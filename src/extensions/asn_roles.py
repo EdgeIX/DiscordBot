@@ -48,9 +48,15 @@ class ASNRoles(commands.Cog):
                 approval_channel = await self._get_approval_channel()
                 user_message = await format_message("ASN Approval", f"Hi <@{member.id}>, your request to add yourself to AS{asn} ({asname}) has been queued for approval")
                 staff_message = await format_message("ASN Approval", f"<@{member.id}> wishes to add themselves to AS{asn} ({asname}), please action this approval.")
-                await interaction.followup.send(embed=user_message)
+                request_message = await interaction.followup.send(embed=user_message, wait=True)
                 await approval_channel.send(
-                    view=ApprovalMenuView(member, asn, interaction, asname),
+                    view=ApprovalMenuView(
+                        requested=member,
+                        asn=asn,
+                        asname=asname,
+                        request_channel_id=interaction.channel_id,
+                        request_message_id=request_message.id if request_message else None,
+                    ),
                     embed=staff_message,
                 )
             except (discord.Forbidden, discord.HTTPException, discord.NotFound):

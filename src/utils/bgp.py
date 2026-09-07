@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
-import aiohttp
-
 from rich.console import Console
+from utils.functions import HTTPRequestError, fetch_json
 
 class BGPToolkitAPI:
     """
@@ -27,17 +26,14 @@ class BGPToolkitAPI:
             return "UNKNOWN"
 
         try:
-            async with self.session.get(url=url) as resp:
-                if resp.status != 200:
-                    self.console.print(f"[red]HTTP GET to {url} returned {resp.status}[/]")
-                    return "UNKNOWN"
-                data = await resp.json()
-        except aiohttp.ClientError as exc:
-            self.console.print(f"[red]HTTP GET to {url} failed: {exc}[/]")
-            return "UNKNOWN"
-        except aiohttp.ContentTypeError:
-            self.console.print(f"[red]HTTP GET to {url} returned invalid JSON[/]")
+            data = await fetch_json(self.session, url)
+        except HTTPRequestError as exc:
+            self.console.print(f"[red]{exc}[/]")
             return "UNKNOWN"
 
-        return data.get("data", {}).get("name", "UNKNOWN")
+        details = data.get("data")
+        if not isinstance(details, dict):
+            self.console.print(f"[red]HTTP GET to {url} returned an invalid schema[/]")
+            return "UNKNOWN"
+        return details.get("name", "UNKNOWN")
     

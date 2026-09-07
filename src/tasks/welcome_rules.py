@@ -14,12 +14,18 @@ class EdgeIXRules(commands.Cog):
     """
     def __init__(self, bot):
         self.bot = bot
-        self.channel = bot.get_channel(bot.config["RULES_CHANNEL_ID"])
+        self.channel = None
 
         self.send_welcome.start()
     
     @tasks.loop(count=1)
     async def send_welcome(self):
+        if self.channel is None:
+            self.channel = self.bot.get_channel(self.bot.config["RULES_CHANNEL_ID"])
+            if self.channel is None:
+                self.channel = await self.bot.fetch_channel(self.bot.config["RULES_CHANNEL_ID"])
+        if self.channel is None:
+            return
         # Delete old message
 
         rules = [
@@ -57,6 +63,9 @@ class EdgeIXRules(commands.Cog):
     async def before_send_welcome(self):
         await self.bot.wait_until_ready()
 
+    def cog_unload(self):
+        self.send_welcome.cancel()
+
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):
         """
@@ -71,6 +80,8 @@ class EdgeIXRules(commands.Cog):
         """
         # Check if this message is the message in bot.rules_msg.id. payload.emoji doesnt return a valid
         # id, meaning we have to use the literal emoji in this code :(
+        if not getattr(self.bot, "rules_msg", None):
+            return
         if payload.message_id == self.bot.rules_msg.id and payload.emoji.name == "✅":
             # Don't execute when the bot adds the initial reaction
             if payload.user_id == self.bot.user.id:

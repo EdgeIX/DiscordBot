@@ -31,47 +31,40 @@ class WhoIsPeering(commands.Cog):
         Example:
             /whois_peering Brisbane
         """
-        response = self.bot.rs.peers_by_location(location.value)
+        await interaction.response.defer()
+        response = self.bot.rs.peers_by_location(location.value) or []
         total = len(response)
-        peers_modified = response[:]
-
-        first = True
-
-        while len(peers_modified) != 0:
-
-            char_counter = 0
-            can_send = []
-
-            while char_counter < 1024:
-                # As we iterate a different list we need to set the original peers
-                # to be a copy of the modified list after the character limit is hit
-                # and while loop is broke. Failure to do this would result in an IndexError
-                # when attempting to pop 
-                peers = peers_modified[:]
-                for peer in peers:
-                    # count new line chars too
-                    char_counter += len(f"{peer}\n")
-                    if char_counter > 1024: break
-                    can_send.append(peer)
-                    peers_modified.pop(0)
-                break
-
-            header = f"Peers for {location.name} (Total: {total})" if first \
-                        else f"Peers for {location.name} Cont. (Total: {total})"
-
-            response = "\n".join(can_send)
+        if not response:
             embed = await format_message(
                 "Who is Peering?",
-                response,
+                "No peers found at this location.",
                 None,
-                header,
+                f"Peers for {location.name} (Total: 0)",
             )
+            await interaction.followup.send(embed=embed, ephemeral=False)
+            return
 
-            if first:
-                await interaction.response.send_message(embed=embed, ephemeral=False)
-                first = False
-            else:
-                await interaction.followup.send(embed=embed, ephemeral=False)
+        chunks = []
+        current = []
+        current_length = 0
+        for peer in response:
+            line = str(peer)
+            if len(line) > 1024:
+                line = f"{line[:1021]}..."
+            line_length = len(line) + (1 if current else 0)
+            if current and current_length + line_length > 1024:
+                chunks.append("\n".join(current))
+                current = []
+                current_length = 0
+            current.append(line)
+            current_length += len(line) + (1 if len(current) > 1 else 0)
+        if current:
+            chunks.append("\n".join(current))
+
+        for index, chunk in enumerate(chunks):
+            header = f"Peers for {location.name} (Total: {total})" if index == 0 else f"Peers for {location.name} Cont. (Total: {total})"
+            embed = await format_message("Who is Peering?", chunk, None, header)
+            await interaction.followup.send(embed=embed, ephemeral=False)
 
 
 async def setup(bot: commands.Bot) -> None:

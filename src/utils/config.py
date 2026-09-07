@@ -1,44 +1,27 @@
 #!/usr/bin/env python3
+"""Environment-aware, validated project configuration."""
+
 import os
-import asyncio
 
-try:
-    from config.production import config as prod
-except TypeError:
-    pass
-from config.dev import config as dev
+from config.production import build_config
 
-class ProjectConfig(object):
 
-    def __init__(self) -> None:
-        """
-        Initialise Config Items
-        """
-        try:
-            self.env = os.environ["PYTHON_ENV"]
-            self.env_config = prod
-        except (KeyError, TypeError):
-            self.env = "dev"
-            self.env_config = dev
-    
+def _is_development(value: str) -> bool:
+    return value.strip().lower() in {"dev", "development", "local", "false", "0"}
+
+
+class ProjectConfig:
+    def __init__(self, environment: str | None = None) -> None:
+        selected = environment or os.getenv("PYTHON_ENV", "dev")
+        self.env = selected
+        self.env_config = build_config(development=_is_development(selected))
+
     @property
     def c(self) -> dict:
         return self.env_config
 
 
 def get_conf_item(key: str):
-    """
-    Adhoc get item from config
+    """Return one validated setting for the current environment."""
 
-    Arguments:
-        key (str): Config Key
-    """
-    try:
-        env = os.environ["PYTHON_ENV"]
-        env_config = prod
-    except KeyError:
-        env = "dev"
-        env_config = dev
-    
-    item = env_config.get(key)
-    return item
+    return ProjectConfig().c.get(key)

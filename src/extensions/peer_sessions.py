@@ -28,13 +28,14 @@ class PeerSessions(commands.Cog):
         Returns:
             discord.Embed: Non ephemeral message with Peer Session state
         """
+        await interaction.response.defer()
         as_match = ASN_REGEX.match(str(asn))
         if not as_match:
             embed = await format_message(
                 "Error",
                 f"{asn} is not a valid ASN!",
             )
-            await interaction.response.send_message(embed=embed, ephemeral=True)
+            await interaction.followup.send(embed=embed, ephemeral=True)
         else:
             data = self.bot.ixp.get_asn_data(asn)
             if not data:
@@ -43,7 +44,7 @@ class PeerSessions(commands.Cog):
                 f"AS{asn} is unknown to EdgeIX!\n\nQuick Links:\nhttps://bgptoolkit.net/api/asn/{asn}\nhttps://bgp.he.net/AS{asn}\nhttps://www.peeringdb.com/asn/{asn}",
                 f"Perhaps AS{asn} should reach out to peering@edgeix.net?"
                 )
-                await interaction.response.send_message(embed=embed, ephemeral=False)
+                await interaction.followup.send(embed=embed, ephemeral=False)
             else:
                 table = PrettyTable()
                 table.field_names = ["ASN", "Peering Fabric", "RS v4", "RS v6"]
@@ -71,7 +72,7 @@ class PeerSessions(commands.Cog):
                 None,
                 "Peering in the following locations:"
                 )
-                await interaction.response.send_message(embed=embed, ephemeral=False)
+                await interaction.followup.send(embed=embed, ephemeral=False)
 
 
 

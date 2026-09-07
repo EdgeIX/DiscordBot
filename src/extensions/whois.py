@@ -17,7 +17,6 @@ class WhoIs(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
-        self.channel = bot.get_channel(bot.config["ROLE_APPROVAL_CHANNEL_ID"])
 
     @app_commands.command(name="whois", description="Whois an IP/ASN Object, find out if they're on EdgeIX!")
     @app_commands.describe(query="IP/ASN Object to query")
@@ -26,7 +25,11 @@ class WhoIs(commands.Cog):
         """
         !!!!!! PROBABLY NOT REALLY WHOIS?? MAYBE MOVE TO /PEER-INFO??? !!!!!!
         """
-        pass
+        embed = await format_message(
+            "Unavailable",
+            "Whois lookup is not available yet. Use /peer or /peer-sessions for ASN details.",
+        )
+        await interaction.response.send_message(embed=embed, ephemeral=True)
 
 async def setup(bot: commands.Bot) -> None:
     """Adds the cog to the bot"""
