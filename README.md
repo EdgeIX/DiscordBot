@@ -57,21 +57,32 @@ docker run --rm -v "$PWD:/work" -w /work \
      --constraint requirements.txt requirements-dev.in'
 ```
 
-Deploy an immutable image tag built by CI, for example
-`samfty/edgeixbot:<git-commit-sha>`, and pass the populated environment file to
-the runtime. Keep the previous commit tag available for rollback:
+Deploy a GHCR image tagged with the source commit built by CI, for example
+`ghcr.io/edgeix/discordbot:<git-commit-sha>`, and pass the populated environment
+file to the runtime. Keep the previous commit tag available for rollback:
 
 ```sh
-docker pull samfty/edgeixbot:<previous-git-commit-sha>
+docker pull ghcr.io/edgeix/discordbot:<previous-git-commit-sha>
 docker stop edgeixbot || true
 docker rm edgeixbot || true
 docker run --name edgeixbot --env-file .env \
-  samfty/edgeixbot:<previous-git-commit-sha>
+  ghcr.io/edgeix/discordbot:<previous-git-commit-sha>
 ```
 
+Use commit-SHA tags for deployment and rollback; each tag identifies its
+source commit. `latest` follows the newest `main` build, and `v*` tags identify
+version releases. GHCR packages default to private. After the first successful
+`main` publish, an administrator must set the EdgeIX `discordbot` package
+visibility to Public in GitHub package settings, then verify an anonymous pull
+of the exact SHA tag before rollout. Existing Docker Hub SHA-tagged images,
+such as `samfty/edgeixbot:<previous-git-commit-sha>`, remain available as a
+fallback for initial rollback. Older Docker Hub tags are not auto-migrated and
+are absent from GHCR.
+
+CI authenticates to GHCR with `GITHUB_TOKEN`, so no Docker Hub secrets are
+required. Leave existing Docker Hub secrets in place during this migration.
 Rollback changes the image reference only; it does not replace development
-credentials or environment values. CI publishes commit-SHA tags plus `latest`
-for `main` and version tags for `v*` releases.
+credentials or environment values.
 
 CI runs unit tests and lint without network access inside the test container,
 then audits locked runtime dependencies. A live Discord smoke test has not
