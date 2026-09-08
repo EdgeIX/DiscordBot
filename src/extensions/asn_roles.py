@@ -1,7 +1,4 @@
 #!/usr/bin/env python3
-import asyncio
-from typing import Optional
-
 import discord
 from discord import app_commands
 from discord.ext import commands
@@ -17,7 +14,13 @@ class ASNRoles(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
-        self.channel = bot.get_channel(bot.config["ROLE_APPROVAL_CHANNEL_ID"])
+
+    async def _get_approval_channel(self):
+        channel_id = self.bot.config["ROLE_APPROVAL_CHANNEL_ID"]
+        channel = self.bot.get_channel(channel_id)
+        if channel is None:
+            channel = await self.bot.fetch_channel(channel_id)
+        return channel
 
     @app_commands.command(name="addasn", description="Add an ASN role to yourself!")
     @app_commands.guilds(discord.Object(id=get_conf_item("GUILD_ID")))
@@ -41,11 +44,27 @@ class ASNRoles(commands.Cog):
             user_message = await format_message("ASN Approval", f"Hi <@{member.id}>, you already have a role for AS{asn}")
             await interaction.followup.send(embed=user_message, ephemeral=True)
         else:
-            user_message = await format_message("ASN Approval", f"Hi <@{member.id}>, your request to add yourself to AS{asn} ({asname}) has been queued for approval")
-            staff_message = await format_message("ASN Approval", f"<@{member.id}> wishes to add themselves to AS{asn} ({asname}), please action this approval.")
-
-            message_id = await interaction.followup.send(embed=user_message)
-            await self.channel.send(view=ApprovalMenuView(member, asn, interaction, asname),embed=staff_message)
+            try:
+                approval_channel = await self._get_approval_channel()
+                user_message = await format_message("ASN Approval", f"Hi <@{member.id}>, your request to add yourself to AS{asn} ({asname}) has been queued for approval")
+                staff_message = await format_message("ASN Approval", f"<@{member.id}> wishes to add themselves to AS{asn} ({asname}), please action this approval.")
+                request_message = await interaction.followup.send(embed=user_message, wait=True)
+                await approval_channel.send(
+                    view=ApprovalMenuView(
+                        requested=member,
+                        asn=asn,
+                        asname=asname,
+                        request_channel_id=interaction.channel_id,
+                        request_message_id=request_message.id if request_message else None,
+                    ),
+                    embed=staff_message,
+                )
+            except (discord.Forbidden, discord.HTTPException, discord.NotFound):
+                error_message = await format_message(
+                    "ASN Approval",
+                    "Your request could not be queued because the approval channel is unavailable. Please contact staff.",
+                )
+                await interaction.followup.send(embed=error_message, ephemeral=True)
     
     @app_commands.command(name="removeasn", description="Remove an ASN role from yourself")
     @app_commands.guilds(discord.Object(id=get_conf_item("GUILD_ID")))

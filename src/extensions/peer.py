@@ -23,6 +23,7 @@ class PeerInformation(commands.Cog):
     async def whois(self, interaction: discord.Interaction, asn: int) -> discord.Embed:
         """
         """
+        await interaction.response.defer()
         data = self.bot.ixp.get_asn_data(asn)
         if not data:
             embed = await format_message(
@@ -30,10 +31,10 @@ class PeerInformation(commands.Cog):
             f"AS{asn} is unknown to EdgeIX!\n\nQuick Links:\nhttps://bgptoolkit.net/api/asn/{asn}\nhttps://bgp.he.net/AS{asn}\nhttps://www.peeringdb.com/asn/{asn}",
             f"Perhaps AS{asn} should reach out to peering@edgeix.net?"
             )
-            await interaction.response.send_message(embed=embed, ephemeral=False)
+            await interaction.followup.send(embed=embed, ephemeral=False)
         else:
             embed = await self.format_data(data)
-            await interaction.response.send_message(embed=embed, ephemeral=False)
+            await interaction.followup.send(embed=embed, ephemeral=False)
 
     async def format_data(self, data: dict):
         """
@@ -52,31 +53,33 @@ class PeerInformation(commands.Cog):
         table = PrettyTable()
         table.field_names = ["Peering Fabric", "IPv4", "IPv6"]
         route_server_enabled = []
-        for connection in data["connection_list"]:
-            ixp = self.bot.ixp.ixp_id.get(connection["ixp_id"])
-            v4 = connection["vlan_list"][0].get("ipv4")
-            v6 = connection["vlan_list"][0].get("ipv6")
-            #route_server_enabled.append(v4.get("routeserver"))
-            v4_state = self.bot.rs.get_session_from_ip(v4.get("address"))
-            route_server_enabled.append(True) if v4_state.get("state") == "up" else route_server_enabled.append(False)
-            if v6 is None:
+        for connection in data.get("connection_list") or []:
+            ixp_id = connection.get("ixp_id", "unknown")
+            ixp = self.bot.ixp.ixp_id.get(ixp_id, {})
+            vlan = (connection.get("vlan_list") or [{}])[0]
+            v4 = vlan.get("ipv4") or {}
+            v6 = vlan.get("ipv6")
+            v4_address = v4.get("address")
+            v4_state = self.bot.rs.get_session_from_ip(v4_address) if v4_address else None
+            route_server_enabled.append(bool(v4_state and v4_state.get("state") == "up"))
+            if not v6:
                 table.add_row([
-                    ixp["name"],
-                    v4.get("address"),
+                    ixp.get("name", ixp_id),
+                    v4_address or "N/A",
                     "N/A",
                 ])
             else:
-                #route_server_enabled.append(v6.get("routeserver"))
-                v6_state = self.bot.rs.get_session_from_ip(v6.get("address"))
-                route_server_enabled.append(True) if v6_state.get("state") == "up" else route_server_enabled.append(False)
+                v6_address = v6.get("address")
+                v6_state = self.bot.rs.get_session_from_ip(v6_address) if v6_address else None
+                route_server_enabled.append(bool(v6_state and v6_state.get("state") == "up"))
                 table.add_row([
-                    ixp["name"],
-                    v4.get("address"),
-                    v6.get("address"),
+                    ixp.get("name", ixp_id),
+                    v4_address or "N/A",
+                    v6_address or "N/A",
                 ])
         
         # Perform logic to work out ASNs route server presence
-        if all(route_server_enabled):
+        if route_server_enabled and all(route_server_enabled):
             route_servers = "Present"
         elif any(route_server_enabled):
             route_servers = "Selective"
@@ -87,7 +90,7 @@ class PeerInformation(commands.Cog):
 
         try:
             embed.add_field(name="Contact", value=data["contact_email"][0], inline=True)
-        except Exception as e:
+        except (IndexError, KeyError, TypeError):
             pass
 
         embed.add_field(name="Peering Locations", value=f"```{table}```", inline=False)

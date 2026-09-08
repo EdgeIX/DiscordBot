@@ -1,19 +1,14 @@
 #!/usr/bin/env python3
-import asyncio
-import aiohttp
-from typing import Optional
-
 from rich.console import Console
+from utils.functions import HTTPRequestError, fetch_json
 
-import discord
-from discord.ext import commands, tasks
-
-class BGPToolkitAPI(commands.Cog):
+class BGPToolkitAPI:
     """
         Python Wrapper for bgptoolkit.net
     """
-    def __init__(self):
+    def __init__(self, session=None):
         self.console = Console()
+        self.session = session
 
     async def get_asn_name(self, asn):
         """ 
@@ -25,17 +20,20 @@ class BGPToolkitAPI(commands.Cog):
         Return:
             dict: JSON blop from bgptoolkit.net
         """
-        session = aiohttp.ClientSession()
         url = f"https://bgptoolkit.net/api/asn/{asn}"
+        if self.session is None:
+            self.console.print("[red]BGP Toolkit session is not ready[/]")
+            return "UNKNOWN"
 
-        async with session.get(url=url) as resp:
-            if resp.status == 200:
-                data = await resp.json()
-                try:
-                    return data["data"].get("name")
-                except Exception as e:
-                    return "UNKNOWN"
-            else:
-                self.console.print(f"[red]HTTP GET to {url} returned non 200 response[/]")
-                return {}
+        try:
+            data = await fetch_json(self.session, url)
+        except HTTPRequestError as exc:
+            self.console.print(f"[red]{exc}[/]")
+            return "UNKNOWN"
+
+        details = data.get("data")
+        if not isinstance(details, dict):
+            self.console.print(f"[red]HTTP GET to {url} returned an invalid schema[/]")
+            return "UNKNOWN"
+        return details.get("name", "UNKNOWN")
     

@@ -1,19 +1,10 @@
 #!/usr/bin/env python3
-import json
-import os
-
-import requests
-from prettytable import PrettyTable
-
-from utils.config import ProjectConfig
-
-
 class RouteServerInteraction(object):
 
     def __init__(self, bot):
-        self.config = ProjectConfig().c
         self.bot = bot
-        self.route_servers = self.config["ROUTE_SERVERS"]
+        self.config = bot.config
+        self.route_servers = self.config.get("ROUTE_SERVERS", {})
         self.data = {}
 
     def get_session_from_ip(self, ip: str) -> dict:
@@ -22,10 +13,10 @@ class RouteServerInteraction(object):
         """
         for location, location_data in self.bot.rs.data.items():
             for route_server, route_server_data in location_data.items():
-                if route_server_data.get("error") is not None:
+                if route_server_data.get("error", False):
                     continue
-                for protocol, protocol_data in route_server_data["data"].items():
-                    for session, session_data in protocol_data["protocols"].items():
+                for protocol_data in route_server_data.get("data", {}).values():
+                    for session_data in protocol_data.get("protocols", {}).values():
                         if session_data.get("neighbor_address") == ip:
                             return session_data
     
@@ -41,11 +32,13 @@ class RouteServerInteraction(object):
                 in the given Cities peering sessions
         """
         #TODO: MOVE THIS TO USE IXP API
-        data = self.data.get(location.upper())
+        data = self.data.get(location.upper(), {})
 
         response = [
             entry.get("description")
-            for rs, rsd in data.items() if not rsd.get("error", False) for protocol, protocol_data in rsd["data"].items() for key, entry in protocol_data["protocols"].items()
+            for rsd in data.values() if not rsd.get("error", False)
+            for protocol_data in rsd.get("data", {}).values()
+            for entry in protocol_data.get("protocols", {}).values()
         ]
         return list(set(response))
     # def check_asn(self, checked_asn: int) -> dict:

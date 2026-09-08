@@ -1,10 +1,7 @@
 #!/usr/bin/env python3
-import asyncio
-
 import discord
 from discord import app_commands
 from discord.ext import commands
-from discord.utils import get
 
 from prettytable import PrettyTable
 
@@ -31,13 +28,14 @@ class PeerSessions(commands.Cog):
         Returns:
             discord.Embed: Non ephemeral message with Peer Session state
         """
+        await interaction.response.defer()
         as_match = ASN_REGEX.match(str(asn))
         if not as_match:
             embed = await format_message(
                 "Error",
                 f"{asn} is not a valid ASN!",
             )
-            await interaction.response.send_message(embed=embed, ephemeral=True)
+            await interaction.followup.send(embed=embed, ephemeral=True)
         else:
             data = self.bot.ixp.get_asn_data(asn)
             if not data:
@@ -46,7 +44,7 @@ class PeerSessions(commands.Cog):
                 f"AS{asn} is unknown to EdgeIX!\n\nQuick Links:\nhttps://bgptoolkit.net/api/asn/{asn}\nhttps://bgp.he.net/AS{asn}\nhttps://www.peeringdb.com/asn/{asn}",
                 f"Perhaps AS{asn} should reach out to peering@edgeix.net?"
                 )
-                await interaction.response.send_message(embed=embed, ephemeral=False)
+                await interaction.followup.send(embed=embed, ephemeral=False)
             else:
                 table = PrettyTable()
                 table.field_names = ["ASN", "Peering Fabric", "RS v4", "RS v6"]
@@ -60,15 +58,13 @@ class PeerSessions(commands.Cog):
                         continue
 
                     v4_state = self.bot.rs.get_session_from_ip(v4.get("address"))
-                    v6 = connection["vlan_list"][0].get("ipv4")
-                    v6_state = self.bot.rs.get_session_from_ip(v6.get("address"))
-                    if v6 is None:
-                        v6 = {"routeserver": "false"}
+                    v6 = connection["vlan_list"][0].get("ipv6")
+                    v6_state = self.bot.rs.get_session_from_ip(v6.get("address")) if v6 else None
                     table.add_row([
                         data["asnum"],
-                        ixp["name"],
-                        v4_state.get("state").lower(),
-                        v6_state.get("state").lower(),
+                        ixp["name"] if ixp else connection["ixp_id"],
+                        v4_state.get("state", "unknown").lower() if v4_state else "unknown",
+                        v6_state.get("state", "n/a").lower() if v6_state else "n/a",
                     ])
                 embed = await format_message(
                 data.get("name"),
@@ -76,7 +72,7 @@ class PeerSessions(commands.Cog):
                 None,
                 "Peering in the following locations:"
                 )
-                await interaction.response.send_message(embed=embed, ephemeral=False)
+                await interaction.followup.send(embed=embed, ephemeral=False)
 
 
 

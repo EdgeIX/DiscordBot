@@ -23,12 +23,13 @@ class CommandSync(commands.Cog):
         """
         Sync commands in the bot command tree to current discord guild
         """
+        await interaction.response.defer(ephemeral=True)
         await self.bot.tree.sync(guild=discord.Object(id=get_conf_item("GUILD_ID")))
         embed = await format_message(
             "Success",
             "Commands have been synced",
         )
-        await interaction.response.send_message(embed=embed, ephemeral=True)
+        await interaction.followup.send(embed=embed, ephemeral=True)
 
     @admin_sync.error
     async def admin_sync_error(self, interaction: discord.Interaction, error: app_commands.AppCommandError):
@@ -36,9 +37,14 @@ class CommandSync(commands.Cog):
             await interaction.response.send_message("You are not authorised to run this command!", ephemeral=True)
             return
 
-        raise error
+        message = "Command sync failed. Please try again or contact staff."
+        if interaction.response.is_done():
+            await interaction.followup.send(message, ephemeral=True)
+            return
+        await interaction.response.send_message(message, ephemeral=True)
 
     @commands.command(name="admin-sync-legacy")
+    @commands.has_any_role(*GLOBAL_ADMIN_PERMISSION)
     async def admin_sync_legacy(self, ctx, *, member: discord.Member = None):
         """ Force bot.tree sync from legacy command method """
         await self.bot.tree.sync(guild=discord.Object(id=get_conf_item("GUILD_ID")))

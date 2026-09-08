@@ -14,7 +14,13 @@ class WelcomeToEdgeIX(commands.Cog):
     """
     def __init__(self, bot):
         self.bot = bot
-        self.channel = bot.get_channel(bot.config["WELCOME_CHANNEL_ID"])
+
+    async def _get_channel(self):
+        channel_id = self.bot.config["WELCOME_CHANNEL_ID"]
+        channel = self.bot.get_channel(channel_id)
+        if channel is None:
+            channel = await self.bot.fetch_channel(channel_id)
+        return channel
 
     @commands.Cog.listener()
     async def on_member_join(self, member: discord.Member):
@@ -28,7 +34,8 @@ class WelcomeToEdgeIX(commands.Cog):
         # TODO: Change welcome message to include info about reacting
         message = f"Hello {member.mention}, Welcome to {guild.name} Discord server! If you wish, please use /addasn <myasn> to update your roles (psst.. if you are a Peer this will give you exclusive access)"
         embed = await format_message("Welcome!", message)
-        await self.channel.send(embed=embed)
+        channel = await self._get_channel()
+        await channel.send(embed=embed)
 
 async def setup(bot):
     """Adds the cog to the bot"""

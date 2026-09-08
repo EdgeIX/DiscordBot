@@ -24,7 +24,7 @@ def format_exception(exception: Exception, extension: str) -> str:
     )
 
 
-def path_from_extension(extension: str) -> pathlib.Path:
+def path_from_extension(extension: str, source_dir: pathlib.Path = None) -> pathlib.Path:
     """Returns a path from a given extension
     Parameters
     ----------
@@ -35,7 +35,8 @@ def path_from_extension(extension: str) -> pathlib.Path:
     pathlib.Path
         the path
     """
-    return pathlib.Path(extension.replace(".", os.sep) + ".py")
+    path = pathlib.Path(*extension.split(".")).with_suffix(".py")
+    return (source_dir / path) if source_dir is not None else path
 
 
 class HotReload(commands.Cog):
@@ -49,7 +50,7 @@ class HotReload(commands.Cog):
 
     def cog_unload(self):
         """Occurs when the cog is unloaded"""
-        self.hot_reload_loop.stop()
+        self.hot_reload_loop.cancel()
 
     @tasks.loop(seconds=3)
     async def hot_reload_loop(self):
@@ -65,8 +66,11 @@ class HotReload(commands.Cog):
             if extension in IGNORE_EXTENSIONS:
                 continue
 
-            path = path_from_extension(extension)
-            time = os.path.getmtime(path)
+            path = path_from_extension(extension, pathlib.Path(self.bot.config.get("SRC_DIR", ".")))
+            try:
+                time = os.path.getmtime(path)
+            except OSError:
+                continue
             try:
                 if self.last_modified_time[extension] == time:
                     continue
@@ -104,8 +108,11 @@ class HotReload(commands.Cog):
         for extension in self.bot.extensions.keys():
             if extension in IGNORE_EXTENSIONS:
                 continue
-            path = path_from_extension(extension)
-            time = os.path.getmtime(path)
+            path = path_from_extension(extension, pathlib.Path(self.bot.config.get("SRC_DIR", ".")))
+            try:
+                time = os.path.getmtime(path)
+            except OSError:
+                continue
             self.last_modified_time[extension] = time
 
 

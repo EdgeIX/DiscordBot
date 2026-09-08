@@ -1,0 +1,17 @@
+.git
+.github
+.codex
+.venv
+venv
+__pycache__
+*.py[cod]
+*.egg-info
+.env
+.env.*
+!.env.sample
+AGENTS.md
+README.md
+docker-compose*.yml
+docker-compose*.yaml
+Dockerfile*
+*.log

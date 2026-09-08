@@ -1,11 +1,55 @@
 #!/usr/bin/env python3
 import asyncio
 import discord
-import requests
+import aiohttp
 
 from rich.console import Console
 
 from discord.ext import commands
+
+
+class HTTPRequestError(RuntimeError):
+    """A request failed before a usable JSON response was received."""
+
+
+class HTTPStatusError(HTTPRequestError):
+    """An HTTP endpoint returned a non-success status."""
+
+    def __init__(self, url: str, status: int) -> None:
+        super().__init__(f"HTTP GET to {url} returned {status}")
+        self.url = url
+        self.status = status
+
+
+class InvalidResponseError(HTTPRequestError):
+    """An endpoint returned malformed JSON or an unexpected top-level value."""
+
+
+async def fetch_json(session, url: str, *, timeout: float = 10, ssl=None, headers=None) -> dict:
+    """Fetch a JSON object with common timeout/status/content checks."""
+
+    request_args = {"timeout": timeout}
+    if ssl is not None:
+        request_args["ssl"] = ssl
+    if headers is not None:
+        request_args["headers"] = headers
+
+    try:
+        async with session.get(url=url, **request_args) as response:
+            if response.status < 200 or response.status >= 300:
+                raise HTTPStatusError(url, response.status)
+            try:
+                payload = await response.json()
+            except (aiohttp.ContentTypeError, ValueError) as exc:
+                raise InvalidResponseError(f"HTTP GET to {url} returned invalid JSON") from exc
+    except HTTPRequestError:
+        raise
+    except (aiohttp.ClientError, asyncio.TimeoutError) as exc:
+        raise HTTPRequestError(f"HTTP GET to {url} failed: {exc}") from exc
+
+    if not isinstance(payload, dict):
+        raise InvalidResponseError(f"HTTP GET to {url} returned a non-object JSON value")
+    return payload
 
 
 async def format_message(
@@ -35,12 +79,3 @@ async def format_message(
     if footer:
         embed.set_footer(text=footer)
     return embed
-
-async def json_loader(url: str):
-    try:
-        r = requests.get(url, timeout=10)
-        return r.json()
-    except Exception as e:
-        console = Console()
-        console.print(f"[red]HTTP GET to {url} raised {str(e)}[/]")
-        return None
