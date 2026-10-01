@@ -79,3 +79,19 @@ async def format_message(
     if footer:
         embed.set_footer(text=footer)
     return embed
+
+
+def member_label(member: discord.abc.User) -> str:
+    """
+    Mention a user with their username as a fallback.
+
+    Discord clients only resolve mentions inside embeds for users they already
+    have cached; otherwise the raw <@id> is shown.
+
+    Arguments:
+        member (discord.abc.User): User to label
+
+    Returns:
+        str: Mention followed by the escaped username
+    """
+    return f"{member.mention} ({discord.utils.escape_markdown(member.name)})"

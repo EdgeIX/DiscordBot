@@ -32,10 +32,14 @@ class WelcomeToEdgeIX(commands.Cog):
         """
         guild = member.guild
         # TODO: Change welcome message to include info about reacting
-        message = f"Hello {member.mention}, Welcome to {guild.name} Discord server! If you wish, please use /addasn <myasn> to update your roles (psst.. if you are a Peer this will give you exclusive access)"
+        message = f"Hello {discord.utils.escape_markdown(member.name)}, Welcome to {guild.name} Discord server! If you wish, please use /addasn <myasn> to update your roles (psst.. if you are a Peer this will give you exclusive access)"
         embed = await format_message("Welcome!", message)
         channel = await self._get_channel()
-        await channel.send(embed=embed)
+        await channel.send(
+            content=member.mention,
+            embed=embed,
+            allowed_mentions=discord.AllowedMentions(users=[member]),
+        )
 
 async def setup(bot):
     """Adds the cog to the bot"""

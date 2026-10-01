@@ -32,7 +32,9 @@ class GoodbyeFromEdgeIX(commands.Cog):
         """
         guild = member.guild
         # TODO: make a better bye bye message.
-        message = f"Bye bye {member.mention}"
+        name = discord.utils.escape_markdown(member.display_name)
+        username = discord.utils.escape_markdown(member.name)
+        message = f"Bye bye {name} ({username})"
         embed = await format_message("Please don't Go!", message)
         channel = await self._get_channel()
         await channel.send(embed=embed)
