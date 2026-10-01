@@ -24,6 +24,10 @@ class FakeMember:
         self.added = []
         self.removed = []
 
+    @property
+    def mention(self):
+        return f"<@{self.id}>"
+
     def get_role(self, role_id):
         return next((role for role in self.roles if role.id == role_id), None)
 
