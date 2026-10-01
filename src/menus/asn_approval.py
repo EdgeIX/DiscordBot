@@ -2,7 +2,7 @@
 import asyncio
 import discord
 
-from utils.functions import format_message
+from utils.functions import format_message, member_label
 from utils.decorators import user_has_permissions
 from utils.permissions import GLOBAL_ADMIN_PERMISSION
 
@@ -94,12 +94,12 @@ class ApprovalMenu(discord.ui.Select):
                     return
                 message = await format_message(
                     "ASN Approval",
-                    f"<@{self.requested.id}> has been granted role: AS{self.asn} ({self.asname}). Addition was approved by {member}",
+                    f"{member_label(self.requested)} has been granted role: AS{self.asn} ({self.asname}). Addition was approved by {member}",
                 )
             elif decision == "Deny":
                 message = await format_message(
                     "ASN Approval",
-                    f"<@{self.requested.id}> has not been granted role: AS{self.asn} ({self.asname}). Addition was rejected by {member}",
+                    f"{member_label(self.requested)} has not been granted role: AS{self.asn} ({self.asname}). Addition was rejected by {member}",
                 )
             else:
                 message = await format_message("ASN Approval", "Unknown approval action.")
