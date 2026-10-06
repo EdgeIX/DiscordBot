@@ -1,11 +1,15 @@
 #!/usr/bin/env python3
 import asyncio
+import logging
 from typing import Optional
 
 import discord
 from discord.ext import commands, tasks
 
 from utils.functions import format_message
+
+ACCEPT_EMOJI = "\U00002705"
+log = logging.getLogger(__name__)
 
 class EdgeIXRules(commands.Cog):
     """
@@ -57,7 +61,24 @@ class EdgeIXRules(commands.Cog):
         if not message_modified:
             self.bot.rules_msg = await self.channel.send(embed=embed)
 
-        await self.bot.rules_msg.add_reaction("\U00002705")
+        await self.bot.rules_msg.add_reaction(ACCEPT_EMOJI)
+        await self.sweep_pending_acceptances(self.bot.rules_msg)
+
+    async def sweep_pending_acceptances(self, message: discord.Message):
+        """
+        Grant the role to anyone whose acceptance reaction was left unprocessed,
+        e.g. reactions added while the bot was offline or the listener was failing
+        """
+        reaction = discord.utils.find(lambda r: str(r.emoji) == ACCEPT_EMOJI, message.reactions)
+        if reaction is None:
+            return
+
+        async for user in reaction.users():
+            if user.id == self.bot.user.id:
+                continue
+            # Users who have since left the server come back as discord.User
+            if not isinstance(user, discord.Member) or await self.grant_rules_role(user):
+                await message.remove_reaction(ACCEPT_EMOJI, user)
     
     @send_welcome.before_loop
     async def before_send_welcome(self):
@@ -78,24 +99,46 @@ class EdgeIXRules(commands.Cog):
             attributes relating to the reaction event
 
         """
-        # Check if this message is the message in bot.rules_msg.id. payload.emoji doesnt return a valid
-        # id, meaning we have to use the literal emoji in this code :(
-        if not getattr(self.bot, "rules_msg", None):
+        # Match on the rules channel rather than the stored rules message so reactions
+        # are still handled if send_welcome failed to run. The channel only ever
+        # contains the rules message, as send_welcome deletes everything else.
+        if payload.channel_id != self.bot.config["RULES_CHANNEL_ID"] or payload.member is None:
             return
-        if payload.message_id == self.bot.rules_msg.id and payload.emoji.name == "✅":
-            # Don't execute when the bot adds the initial reaction
-            if payload.user_id == self.bot.user.id:
-                return
-            
-            guild = self.bot.get_guild(payload.guild_id)
-            role = guild.get_role(self.bot.config["RULES_ACCEPTED_ROLE"])
+        if payload.user_id == self.bot.user.id:
+            return
 
-            await payload.member.add_roles(discord.utils.get(guild.roles, name=role.name))
-            await self.bot.rules_msg.remove_reaction(payload.emoji.name, payload.member)
+        # Only remove the acceptance reaction once the role is granted, so a failed
+        # attempt is retried by the sweep on next startup
+        if str(payload.emoji) == ACCEPT_EMOJI and not await self.grant_rules_role(payload.member):
+            return
 
-        # Remove all other reactions to avoid confusion
-        elif payload.message_id == self.bot.rules_msg.id:
-            await self.bot.rules_msg.remove_reaction(payload.emoji.name, payload.member)
+        # Remove the acceptance reaction, and all other reactions to avoid confusion
+        channel = self.bot.get_partial_messageable(payload.channel_id)
+        message = channel.get_partial_message(payload.message_id)
+        await message.remove_reaction(payload.emoji, payload.member)
+
+    async def grant_rules_role(self, member: discord.Member) -> bool:
+        """
+        Give a member the rules accepted role
+
+        Returns:
+            bool: True if the member has the role
+        """
+        role_id = self.bot.config["RULES_ACCEPTED_ROLE"]
+        role = member.guild.get_role(role_id)
+        if role is None:
+            log.error("Rules accepted role %s not found in guild %s", role_id, member.guild.id)
+            return False
+        if role in member.roles:
+            return True
+
+        try:
+            await member.add_roles(role, reason="Accepted server rules")
+        except discord.HTTPException:
+            log.exception("Could not add rules accepted role to member %s", member.id)
+            return False
+        log.info("Added rules accepted role to member %s", member.id)
+        return True
 
 async def setup(bot):
     """Adds the cog to the bot"""
