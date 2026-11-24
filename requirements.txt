@@ -557,9 +557,9 @@ multidict==6.9.1 \
     # via
     #   aiohttp
     #   yarl
-prettytable==3.18.0 \
-    --hash=sha256:439217116152244369caf3d9f1caf2f9fe29b03bd79e88d2928c8e718c95d680 \
-    --hash=sha256:b3346e0e6f79180833aebaac088ae926340586cf6d7d991b9eb125b65f72313a
+prettytable==3.19.0 \
+    --hash=sha256:0ecedd6d9a560b330503bef15791b77954fa46b7123203d91e463330b61959ba \
+    --hash=sha256:66d0eaf75f21198e92ce09e59a12c140be76c78b8a89252e7e87ac8994f96383
     # via -r requirements.in
 propcache==0.5.2 \
     --hash=sha256:01c4fc7480cd0598bb4b57022df55b9ca296da7fc5a8760bd8451a7e63a7d427 \
